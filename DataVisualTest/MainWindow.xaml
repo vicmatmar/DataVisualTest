@@ -4,9 +4,37 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DataVisualTest"
+        xmlns:chartingToolkit="clr-namespace:System.Windows.Controls.DataVisualization.Charting;assembly=System.Windows.Controls.DataVisualization.Toolkit"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        
-    </Grid>
+        Title="MainWindow" Height="600" Width="800"
+        >
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Margin="10">
+        <StackPanel>
+
+            <chartingToolkit:Chart Height="500" Margin="10" Name="columnChart" Title="Column Series Demo">
+                <chartingToolkit:ColumnSeries 
+                    DependentValuePath="Value"
+                    IndependentValuePath="Key"
+                    ItemsSource="{Binding}" />
+            </chartingToolkit:Chart>
+
+            <chartingToolkit:Chart Name="lineChart" Title="Power Graph" Background="YellowGreen" Foreground="DarkBlue" VerticalAlignment="Top" Margin="16,36,20,0" Height="432"  IsEnabled="True">
+
+                <chartingToolkit:LineSeries Title="SolarCell"  
+                                    ItemsSource="{Binding}" 
+                                    DependentValuePath="Value"
+                                    IndependentValuePath="Key"
+                                    IsSelectionEnabled="True">
+                    <chartingToolkit:LineSeries.IndependentAxis>
+                        <chartingToolkit:DateTimeAxis  Orientation="X" Title="Time (Mins)" IntervalType="Auto"/>
+                    </chartingToolkit:LineSeries.IndependentAxis>
+                    <chartingToolkit:LineSeries.DependentRangeAxis>
+                        <chartingToolkit:LinearAxis Orientation="Y" Title="Power (W)"/>
+                    </chartingToolkit:LineSeries.DependentRangeAxis>
+                </chartingToolkit:LineSeries>
+            </chartingToolkit:Chart>
+
+        </StackPanel>
+
+    </ScrollViewer>
 </Window>
