@@ -17,6 +17,10 @@ using System.Windows.Controls.DataVisualization.Charting;
 using System.Collections.ObjectModel;
 using System.Windows.Threading;
 
+using CINALib;
+using FTD2XX_NET;
+using System.IO;
+
 namespace DataVisualTest
 {
     /// <summary>
@@ -24,52 +28,112 @@ namespace DataVisualTest
     /// </summary>
     public partial class MainWindow : Window
     {
-        ObservableCollection<KeyValuePair<string, int>> valueList;
-        ObservableCollection<KeyValuePair<DateTime, double>> power;
+        ObservableCollection<KeyValuePair<DateTime, double>> voltage = new ObservableCollection<KeyValuePair<DateTime, double>>();
+        ObservableCollection<KeyValuePair<DateTime, double>> current = new ObservableCollection<KeyValuePair<DateTime, double>>();
+        ObservableCollection<KeyValuePair<DateTime, double>> power = new ObservableCollection<KeyValuePair<DateTime, double>>();
 
         DispatcherTimer timer;
-        int value = 0;
         Random random = new Random(DateTime.Now.Millisecond);
+
+        Cina219 cina = new Cina219();
+        private FTDI.FT_DEVICE_INFO_NODE[] devList = new FTDI.FT_DEVICE_INFO_NODE[100];
+
+        StreamWriter sw;
+
+        float startPower = 0;
+        DateTime startTime = DateTime.MinValue;
+
+        Object dataLock = new Object();
 
         public MainWindow()
         {
             InitializeComponent();
-            showColumnChart();
+            //lblStatus.Text = DateTime.Now.ToLongTimeString();
 
-            timer = new DispatcherTimer();
-            timer.Interval = new TimeSpan(0, 0, 1);
-            timer.Tick += Timer_Tick;
-            timer.Start();
+            try
+            {
+                lineVolts.DataContext = voltage;
+                lineCurrent.DataContext = current;
+                linePower.DataContext = power;
+
+                cina.UnitCurrent = Cina219.CurrentUnit.mA;
+                cina.Init();
+
+                string filename = $"BatteryProfile{DateTime.Now.ToString("MMdd_HHmm")}.csv";
+                sw = File.CreateText(filename);
+                sw.AutoFlush = true;
+                sw.WriteLine($"TimeStamp,Power(mW),Voltage(V),Current(mA)");
+
+                getData();
+
+
+                timer = new DispatcherTimer();
+                timer.Interval = new TimeSpan(0, 1, 0);
+                timer.Tick += Timer_Tick;
+                timer.Start();
+
+            }
+            catch (Exception ex)
+            {
+                //lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
+            }
         }
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            changeData();
+            getData();
         }
 
-        void changeData()
+        void getData()
         {
-            valueList[0] = new KeyValuePair<string, int>("Developer", value++);
+            lock (dataLock)
+            {
+                bool ovf = false;
+                float v = cina.GetVoltage(ref ovf);
+                float i = cina.GetCurrent();
+                float p = v * i;
+                DateTime dateTime = DateTime.Now;
 
-            power.Add(new KeyValuePair<DateTime, double>(DateTime.Now, random.NextDouble()));
-            
+                voltage.Add(new KeyValuePair<DateTime, double>(dateTime, v));
+                current.Add(new KeyValuePair<DateTime, double>(dateTime, i));
+                power.Add(new KeyValuePair<DateTime, double>(dateTime, p));
+
+                // This is so we can calculate a linear power per h rate
+                if (startPower == 0 && p > 0)
+                {
+                    startPower = p;
+                    if (startTime == DateTime.MinValue)
+                        startTime = dateTime;
+                }
+
+                TimeSpan ts = dateTime - startTime;
+                float deltaPower = p - startPower; // Should always be negative unless the battery is recharged
+                double rate = deltaPower / ts.TotalHours; // mw/h
+
+                lblMsg.Content = $"{dateTime} Power = {p}mW Voltage = {v}V  Current = {i}mA Rate = {rate}mW/h";
+
+                while (true)
+                {
+                    try
+                    {
+                        sw.WriteLine($"{dateTime},{p},{v},{i}");
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        //lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
+                    }
+
+                }
+
+                //lblStatus.Text = dateTime.ToLongTimeString();
+                //power.Add(new KeyValuePair<DateTime, double>(DateTime.Now, random.NextDouble()));
+            }
         }
-        private void showColumnChart()
+
+        private void Button_Click(object sender, RoutedEventArgs e)
         {
-            valueList = new ObservableCollection<KeyValuePair<string, int>>();
-            valueList.Add(new KeyValuePair<string, int>("Developer", 60));
-            valueList.Add(new KeyValuePair<string, int>("Misc", 20));
-            valueList.Add(new KeyValuePair<string, int>("Tester", 50));
-            valueList.Add(new KeyValuePair<string, int>("QA", 30));
-            valueList.Add(new KeyValuePair<string, int>("Project Manager", 40));
-
-            power = new ObservableCollection<KeyValuePair<DateTime, double>>();
-
-            //Setting data for column chart
-            columnChart.DataContext = valueList;
-
-            lineChart.DataContext = power;
-
+            getData();
         }
     }
 }

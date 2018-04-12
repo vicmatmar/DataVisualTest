@@ -6,35 +6,135 @@
         xmlns:local="clr-namespace:DataVisualTest"
         xmlns:chartingToolkit="clr-namespace:System.Windows.Controls.DataVisualization.Charting;assembly=System.Windows.Controls.DataVisualization.Toolkit"
         mc:Ignorable="d"
-        Title="MainWindow" Height="600" Width="800"
+        Title="Power Monitor" 
+        Width="1024" 
+        Height="775" 
         >
-    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Margin="10">
-        <StackPanel>
 
-            <chartingToolkit:Chart Height="500" Margin="10" Name="columnChart" Title="Column Series Demo">
-                <chartingToolkit:ColumnSeries 
-                    DependentValuePath="Value"
-                    IndependentValuePath="Key"
-                    ItemsSource="{Binding}" />
-            </chartingToolkit:Chart>
+    <StackPanel 
+        Name="stackPanel0" 
+        Background="LightGray"
+        Margin="5"
+        VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+        >
+        
+        <ToolBar>
+            <Button Content="Get" Width="40" Click="Button_Click" Background="LightBlue"></Button>
+        </ToolBar>
 
-            <chartingToolkit:Chart Name="lineChart" Title="Power Graph" Background="YellowGreen" Foreground="DarkBlue" VerticalAlignment="Top" Margin="16,36,20,0" Height="432"  IsEnabled="True">
+        <Label Name="lblMsg" Margin="0,0" Content="{Binding}" Background="LightBlue"></Label>
 
-                <chartingToolkit:LineSeries Title="SolarCell"  
-                                    ItemsSource="{Binding}" 
-                                    DependentValuePath="Value"
-                                    IndependentValuePath="Key"
-                                    IsSelectionEnabled="True">
+        <Grid
+            VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+            >
+        
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition ></RowDefinition>
+                <RowDefinition ></RowDefinition>
+            </Grid.RowDefinitions>
+
+            
+            <chartingToolkit:Chart 
+                    Name="linePower" Title="Power" 
+                    Grid.Row="0"
+                    Grid.ColumnSpan="2"
+                    MinHeight="350"
+                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                    Background="LightBlue" Foreground="DarkBlue" 
+                    IsEnabled="True">
+
+                <chartingToolkit:Chart.LegendStyle>
+                    <Style TargetType="Control">
+                        <Setter Property="Width" Value="0" />
+                        <Setter Property="Height" Value="0" />
+                    </Style>
+                </chartingToolkit:Chart.LegendStyle>
+
+                <chartingToolkit:LineSeries Title="Power"  
+                            VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                            ItemsSource="{Binding}" 
+                            DependentValuePath="Value"
+                            IndependentValuePath="Key"
+                            IsSelectionEnabled="True">
                     <chartingToolkit:LineSeries.IndependentAxis>
-                        <chartingToolkit:DateTimeAxis  Orientation="X" Title="Time (Mins)" IntervalType="Auto"/>
+                        <chartingToolkit:DateTimeAxis  Orientation="X" Title="TimeStamp" IntervalType="Seconds"/>
                     </chartingToolkit:LineSeries.IndependentAxis>
                     <chartingToolkit:LineSeries.DependentRangeAxis>
-                        <chartingToolkit:LinearAxis Orientation="Y" Title="Power (W)"/>
+                        <chartingToolkit:LinearAxis Orientation="Y" Title="Power (mW)" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"/>
                     </chartingToolkit:LineSeries.DependentRangeAxis>
                 </chartingToolkit:LineSeries>
             </chartingToolkit:Chart>
 
-        </StackPanel>
 
-    </ScrollViewer>
+                <chartingToolkit:Chart 
+                        Name="lineVolts" Title="Volts" 
+                        Grid.Column="0" Grid.Row="1" 
+                        VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                        Background="LightBlue" Foreground="DarkBlue" 
+                        IsEnabled="True">
+
+                    <chartingToolkit:Chart.LegendStyle>
+                        <Style TargetType="Control">
+                            <Setter Property="Width" Value="0" />
+                            <Setter Property="Height" Value="0" />
+                        </Style>
+                    </chartingToolkit:Chart.LegendStyle>
+
+                    <chartingToolkit:LineSeries Title="Voltage"  
+                                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                                    ItemsSource="{Binding}" 
+                                    DependentValuePath="Value"
+                                    IndependentValuePath="Key"
+                                    IsSelectionEnabled="True">
+                        <chartingToolkit:LineSeries.IndependentAxis>
+                            <chartingToolkit:DateTimeAxis  Orientation="X" Title="TimeStamp" IntervalType="Seconds"/>
+                        </chartingToolkit:LineSeries.IndependentAxis>
+                        <chartingToolkit:LineSeries.DependentRangeAxis>
+                            <chartingToolkit:LinearAxis Orientation="Y" Title="Volatge (V)" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+                        </chartingToolkit:LineSeries.DependentRangeAxis>
+                    </chartingToolkit:LineSeries>
+                </chartingToolkit:Chart>
+
+                <chartingToolkit:Chart 
+                    Name="lineCurrent" Title="Current"
+                        Grid.Column="1" Grid.Row="1" 
+                        VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                        MinHeight="300" 
+                        Background="LightBlue" Foreground="DarkBlue" 
+                        IsEnabled="True">
+
+                    <chartingToolkit:Chart.LegendStyle>
+                        <Style TargetType="Control">
+                            <Setter Property="Width" Value="0" />
+                            <Setter Property="Height" Value="0" />
+                        </Style>
+                    </chartingToolkit:Chart.LegendStyle>
+
+                    <chartingToolkit:LineSeries Title="Current"  
+                                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                                    ItemsSource="{Binding}" 
+                                    DependentValuePath="Value"
+                                    IndependentValuePath="Key"
+                                    IsSelectionEnabled="True">
+                        <chartingToolkit:LineSeries.IndependentAxis>
+                            <chartingToolkit:DateTimeAxis  Orientation="X" Title="TimeStamp" IntervalType="Seconds"/>
+                        </chartingToolkit:LineSeries.IndependentAxis>
+                        <chartingToolkit:LineSeries.DependentRangeAxis>
+                            <chartingToolkit:LinearAxis Orientation="Y" Title="Current (mA)" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+                        </chartingToolkit:LineSeries.DependentRangeAxis>
+                    </chartingToolkit:LineSeries>
+                </chartingToolkit:Chart>
+
+        </Grid>
+            <StatusBar VerticalAlignment="Bottom">
+                <StatusBarItem>
+                    <TextBlock Name="lblStatus"></TextBlock>
+                </StatusBarItem>
+            </StatusBar>
+    </StackPanel>
 </Window>
