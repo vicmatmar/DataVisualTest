@@ -28,9 +28,9 @@ namespace DataVisualTest
     /// </summary>
     public partial class MainWindow : Window
     {
-        ObservableCollection<KeyValuePair<DateTime, double>> voltage = new ObservableCollection<KeyValuePair<DateTime, double>>();
-        ObservableCollection<KeyValuePair<DateTime, double>> current = new ObservableCollection<KeyValuePair<DateTime, double>>();
-        ObservableCollection<KeyValuePair<DateTime, double>> power = new ObservableCollection<KeyValuePair<DateTime, double>>();
+        ObservableCollection<KeyValuePair<double, double>> voltage = new ObservableCollection<KeyValuePair<double, double>>();
+        ObservableCollection<KeyValuePair<double, double>> current = new ObservableCollection<KeyValuePair<double, double>>();
+        ObservableCollection<KeyValuePair<double, double>> power = new ObservableCollection<KeyValuePair<double, double>>();
 
         DispatcherTimer timer;
         Random random = new Random(DateTime.Now.Millisecond);
@@ -42,19 +42,22 @@ namespace DataVisualTest
 
         float startPower = 0;
         DateTime startTime = DateTime.MinValue;
+        TimeSpan ts;
 
         Object dataLock = new Object();
 
         public MainWindow()
         {
             InitializeComponent();
-            //lblStatus.Text = DateTime.Now.ToLongTimeString();
+            
+            lblStatus.Text = DateTime.Now.ToLongTimeString();
 
             try
             {
                 lineVolts.DataContext = voltage;
                 lineCurrent.DataContext = current;
                 linePower.DataContext = power;
+
 
                 cina.UnitCurrent = Cina219.CurrentUnit.mA;
                 cina.Init();
@@ -68,14 +71,13 @@ namespace DataVisualTest
 
 
                 timer = new DispatcherTimer();
-                timer.Interval = new TimeSpan(0, 1, 0);
+                timer.Interval = new TimeSpan(0, 0, Int32.Parse(txtInterval.Text));
                 timer.Tick += Timer_Tick;
-                timer.Start();
 
             }
             catch (Exception ex)
             {
-                //lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
+                lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
             }
         }
 
@@ -88,15 +90,22 @@ namespace DataVisualTest
         {
             lock (dataLock)
             {
+
                 bool ovf = false;
                 float v = cina.GetVoltage(ref ovf);
                 float i = cina.GetCurrent();
                 float p = v * i;
+
                 DateTime dateTime = DateTime.Now;
 
-                voltage.Add(new KeyValuePair<DateTime, double>(dateTime, v));
-                current.Add(new KeyValuePair<DateTime, double>(dateTime, i));
-                power.Add(new KeyValuePair<DateTime, double>(dateTime, p));
+                if (startTime == DateTime.MinValue)
+                    startTime = dateTime;
+
+                ts += dateTime - startTime;
+
+                voltage.Add(new KeyValuePair<double, double>(ts.TotalMinutes, v));
+                current.Add(new KeyValuePair<double, double>(ts.TotalMinutes, i));
+                power.Add(new KeyValuePair<double, double>(ts.TotalMinutes, p));
 
                 // This is so we can calculate a linear power per h rate
                 if (startPower == 0 && p > 0)
@@ -106,11 +115,10 @@ namespace DataVisualTest
                         startTime = dateTime;
                 }
 
-                TimeSpan ts = dateTime - startTime;
-                float deltaPower = p - startPower; // Should always be negative unless the battery is recharged
-                double rate = deltaPower / ts.TotalHours; // mw/h
+                float deltaPower_fromStart = p - startPower; // Should always be negative unless the battery is recharged
+                double rate_fromStart = deltaPower_fromStart / ts.TotalHours; // mw/h
 
-                lblMsg.Content = $"{dateTime} Power = {p}mW Voltage = {v}V  Current = {i}mA Rate = {rate}mW/h";
+                lblMsg.Content = $"{dateTime} Power = {p}mW Voltage = {v}V  Current = {i}mA Rate = {rate_fromStart}mW/h";
 
                 while (true)
                 {
@@ -121,19 +129,30 @@ namespace DataVisualTest
                     }
                     catch (Exception ex)
                     {
-                        //lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
+                        lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
                     }
 
                 }
 
-                //lblStatus.Text = dateTime.ToLongTimeString();
                 //power.Add(new KeyValuePair<DateTime, double>(DateTime.Now, random.NextDouble()));
             }
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void Button_ReadClick(object sender, RoutedEventArgs e)
         {
             getData();
+        }
+
+        private void sliderTimeValuveChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if(timer != null)
+                timer.Interval = new TimeSpan(0, 0, Int32.Parse(txtInterval.Text));
+        }
+
+        private void Button_StartClick(object sender, RoutedEventArgs e)
+        {
+            if (timer != null)
+                timer.Start();
         }
     }
 }
