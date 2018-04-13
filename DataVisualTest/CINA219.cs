@@ -316,6 +316,24 @@ namespace CINALib
             return power;
         }
 
+        public void SetACBusPin(byte pin, bool on)
+        {
+            byte pins_state = GetACBusPins();
+
+            if (!on)
+            {
+                byte mask = (byte)~(0x01 << pin);
+                pins_state = (byte)(pins_state & mask);
+            }
+            else
+            {
+                byte mask = (byte)(0x01 << pin);
+                pins_state = (byte)(pins_state | mask);
+            }
+
+            SetACBusPins(pins_state, 0xFF);
+
+        }
 
         public void SetACBusPins(byte data, byte direction)
         {

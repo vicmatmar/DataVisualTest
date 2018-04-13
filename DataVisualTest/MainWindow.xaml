@@ -13,26 +13,32 @@
 
 
     <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition></ColumnDefinition>
-                <ColumnDefinition></ColumnDefinition>
-            </Grid.ColumnDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+        </Grid.ColumnDefinitions>
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="60"></RowDefinition>
-                <RowDefinition ></RowDefinition>
-                <RowDefinition ></RowDefinition>
-                <RowDefinition Height="30"></RowDefinition>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="80"></RowDefinition>
+            <RowDefinition ></RowDefinition>
+            <RowDefinition ></RowDefinition>
+            <RowDefinition Height="30"></RowDefinition>
         </Grid.RowDefinitions>
 
         <StackPanel Grid.ColumnSpan="2">
-            <ToolBar>
-                <Button Content="Start" Width="40" Click="Button_StartClick" Background="LightBlue"></Button>
-                <Label Content="Interval(s):"></Label>
-                <TextBox Name="txtInterval" Text="1" Width="30" TextAlignment="Right"></TextBox>
-                <Button Content="Read" Width="40" Click="Button_ReadClick" Background="LightBlue"></Button>
+
+            <ToolBar BorderBrush="Black" BorderThickness="1">
+                <Button Name="btnStart" Content="Start" Width="40" Click="Button_StartClick" Background="LightBlue" BorderBrush="Black"></Button>
+                <StackPanel >
+                    <Label Content="Interval(ms):"></Label>
+                    <TextBox Grid.Column="1" Name="txtInterval" Text="1000" Width="35" TextAlignment="Right"></TextBox>
+                </StackPanel>
+                <StackPanel>
+                    <Label Content="Duration(s):"></Label>
+                    <TextBox Name="txtDuration" Text="60" Width="30" TextAlignment="Right"></TextBox>
+                </StackPanel>
             </ToolBar>
-            <Label Name="lblMsg" Margin="0,3,0,0" Content="{Binding}" Background="LightBlue"></Label>
+            <Label Name="lblMsg" Height="30" Content="{Binding}" Background="LightBlue" BorderThickness="1" BorderBrush="Black"></Label>
         </StackPanel>
 
         <DockPanel 
@@ -40,89 +46,89 @@
                 Grid.ColumnSpan="2"
                 >
 
-                <chartingToolkit:Chart 
+            <chartingToolkit:Chart 
                         Name="linePower" Title="Power" 
                         MinHeight="350"
                         Background="LightBlue" Foreground="DarkBlue" 
                         IsEnabled="True">
-                    <chartingToolkit:Chart.LegendStyle>
-                        <Style TargetType="Control">
-                            <Setter Property="Width" Value="0" />
-                            <Setter Property="Height" Value="0" />
-                        </Style>
-                    </chartingToolkit:Chart.LegendStyle>
+                <chartingToolkit:Chart.LegendStyle>
+                    <Style TargetType="Control">
+                        <Setter Property="Width" Value="0" />
+                        <Setter Property="Height" Value="0" />
+                    </Style>
+                </chartingToolkit:Chart.LegendStyle>
 
-                    <chartingToolkit:LineSeries Title="Power"  
+                <chartingToolkit:LineSeries Title="Power"  
                                 ItemsSource="{Binding}" 
                                 DependentValuePath="Value"
                                 IndependentValuePath="Key"
                                 IsSelectionEnabled="True">
-                        <chartingToolkit:LineSeries.IndependentAxis>
-                            <chartingToolkit:LinearAxis Orientation="X" Title="Duration (min)" Minimum="0"/>
-                        </chartingToolkit:LineSeries.IndependentAxis>
-                        <chartingToolkit:LineSeries.DependentRangeAxis>
-                            <chartingToolkit:LinearAxis Orientation="Y" Title="Power (mW)"/>
-                        </chartingToolkit:LineSeries.DependentRangeAxis>
-                    </chartingToolkit:LineSeries>
-                </chartingToolkit:Chart>
-            </DockPanel>
+                    <chartingToolkit:LineSeries.IndependentAxis>
+                        <chartingToolkit:LinearAxis Orientation="X" Title="Duration (min)" Minimum="0"/>
+                    </chartingToolkit:LineSeries.IndependentAxis>
+                    <chartingToolkit:LineSeries.DependentRangeAxis>
+                        <chartingToolkit:LinearAxis Orientation="Y" Title="Power (mW)"/>
+                    </chartingToolkit:LineSeries.DependentRangeAxis>
+                </chartingToolkit:LineSeries>
+            </chartingToolkit:Chart>
+        </DockPanel>
 
 
-            <chartingToolkit:Chart 
+        <chartingToolkit:Chart 
                         Name="lineVolts" Title="Volts" 
                         Grid.Column="0" Grid.Row="2" 
                         Background="LightBlue" Foreground="DarkBlue" 
                         IsEnabled="True">
 
             <chartingToolkit:Chart.LegendStyle>
-                        <Style TargetType="Control">
-                            <Setter Property="Width" Value="0" />
-                            <Setter Property="Height" Value="0" />
-                        </Style>
+                <Style TargetType="Control">
+                    <Setter Property="Width" Value="0" />
+                    <Setter Property="Height" Value="0" />
+                </Style>
             </chartingToolkit:Chart.LegendStyle>
 
-                    <chartingToolkit:LineSeries Title="Voltage"
+            <chartingToolkit:LineSeries Title="Voltage"
                                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                                     ItemsSource="{Binding}" 
                                     DependentValuePath="Value"
                                     IndependentValuePath="Key"
                                     IsSelectionEnabled="True">
-                        <chartingToolkit:LineSeries.IndependentAxis>
-                            <chartingToolkit:LinearAxis Orientation="X" Title="Duration (min)" Minimum="0"/>
-                        </chartingToolkit:LineSeries.IndependentAxis>
-                        <chartingToolkit:LineSeries.DependentRangeAxis>
-                            <chartingToolkit:LinearAxis Orientation="Y" Title="Volatge (V)"/>
-                        </chartingToolkit:LineSeries.DependentRangeAxis>
-                    </chartingToolkit:LineSeries>
-                </chartingToolkit:Chart>
+                <chartingToolkit:LineSeries.IndependentAxis>
+                    <chartingToolkit:LinearAxis Orientation="X" Title="Duration (min)" Minimum="0"/>
+                </chartingToolkit:LineSeries.IndependentAxis>
+                <chartingToolkit:LineSeries.DependentRangeAxis>
+                    <chartingToolkit:LinearAxis Orientation="Y" Title="Volatge (V)"/>
+                </chartingToolkit:LineSeries.DependentRangeAxis>
+            </chartingToolkit:LineSeries>
+        </chartingToolkit:Chart>
 
-                <chartingToolkit:Chart 
+        <chartingToolkit:Chart 
                     Name="lineCurrent" Title="Current"
                         Grid.Column="1" Grid.Row="2" 
                         MinHeight="300" 
                         Background="LightBlue" Foreground="DarkBlue" 
                         IsEnabled="True">
 
-                    <chartingToolkit:Chart.LegendStyle>
-                        <Style TargetType="Control">
-                            <Setter Property="Width" Value="0" />
-                            <Setter Property="Height" Value="0" />
-                        </Style>
-                    </chartingToolkit:Chart.LegendStyle>
+            <chartingToolkit:Chart.LegendStyle>
+                <Style TargetType="Control">
+                    <Setter Property="Width" Value="0" />
+                    <Setter Property="Height" Value="0" />
+                </Style>
+            </chartingToolkit:Chart.LegendStyle>
 
-                    <chartingToolkit:LineSeries Title="Current"  
+            <chartingToolkit:LineSeries Title="Current"  
                                     ItemsSource="{Binding}" 
                                     DependentValuePath="Value"
                                     IndependentValuePath="Key"
                                     IsSelectionEnabled="True">
-                        <chartingToolkit:LineSeries.IndependentAxis>
-                            <chartingToolkit:LinearAxis Orientation="X" Title="Duration (min)" Minimum="0"/>
-                        </chartingToolkit:LineSeries.IndependentAxis>
-                        <chartingToolkit:LineSeries.DependentRangeAxis>
-                            <chartingToolkit:LinearAxis Orientation="Y" Title="Current (mA)"/>
-                        </chartingToolkit:LineSeries.DependentRangeAxis>
-                    </chartingToolkit:LineSeries>
-                </chartingToolkit:Chart>
+                <chartingToolkit:LineSeries.IndependentAxis>
+                    <chartingToolkit:LinearAxis Orientation="X" Title="Duration (min)" Minimum="0"/>
+                </chartingToolkit:LineSeries.IndependentAxis>
+                <chartingToolkit:LineSeries.DependentRangeAxis>
+                    <chartingToolkit:LinearAxis Orientation="Y" Title="Current (mA)"/>
+                </chartingToolkit:LineSeries.DependentRangeAxis>
+            </chartingToolkit:LineSeries>
+        </chartingToolkit:Chart>
 
         <StatusBarItem Grid.Row="3" Grid.ColumnSpan="2">
             <TextBlock Name="lblStatus"></TextBlock>
