@@ -31,7 +31,7 @@
                 <Button Name="btnStart" Content="Start" Width="40" Click="Button_StartClick" Background="LightBlue" BorderBrush="Black"></Button>
                 <StackPanel >
                     <Label Content="Interval(ms):"></Label>
-                    <TextBox Grid.Column="1" Name="txtInterval" Text="1000" Width="35" TextAlignment="Right"></TextBox>
+                    <TextBox Grid.Column="1" Name="txtInterval" Text="500" Width="35" TextAlignment="Right"></TextBox>
                 </StackPanel>
                 <StackPanel>
                     <Label Content="Duration(s):"></Label>
@@ -67,7 +67,7 @@
                         <chartingToolkit:LinearAxis Orientation="X" Title="Duration (min)" Minimum="0"/>
                     </chartingToolkit:LineSeries.IndependentAxis>
                     <chartingToolkit:LineSeries.DependentRangeAxis>
-                        <chartingToolkit:LinearAxis Orientation="Y" Title="Power (mW)"/>
+                        <chartingToolkit:LinearAxis Name="PowerY" Orientation="Y" Title="Power (mW)"/>
                     </chartingToolkit:LineSeries.DependentRangeAxis>
                 </chartingToolkit:LineSeries>
             </chartingToolkit:Chart>

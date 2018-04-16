@@ -21,6 +21,7 @@ using CINALib;
 using FTD2XX_NET;
 using System.IO;
 using System.Threading;
+using System.ComponentModel;
 
 namespace DataVisualTest
 {
@@ -37,7 +38,7 @@ namespace DataVisualTest
         Cina219 cina = new Cina219();
         //private FTDI.FT_DEVICE_INFO_NODE[] devList = new FTDI.FT_DEVICE_INFO_NODE[100];
 
-        StreamWriter sw;
+        StreamWriter _sw;
 
         int _duration_sec = 60;
         public int Duration_sec { get => _duration_sec; set => _duration_sec = value; }
@@ -57,10 +58,6 @@ namespace DataVisualTest
                 cina.Init();
                 cina.SetACBusPin(0, false);
 
-                string filename = $"BatteryProfile{DateTime.Now.ToString("MMdd_HHmm")}.csv";
-                sw = File.CreateText(filename);
-                sw.AutoFlush = true;
-                sw.WriteLine($"TimeStamp,Power(mW),Voltage(V),Current(mA)");
 
                 timer = new DispatcherTimer();
                 timer.Tick += Timer_Tick;
@@ -72,6 +69,25 @@ namespace DataVisualTest
             }
         }
 
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            try
+            {
+                // Try to turn relay off
+                cina.Init();
+                cina.SetACBusPin(0, false);
+            }
+            catch (Exception ex)
+            {
+                // and just in case that failed
+                cina.Dispose();
+                Cina219 cina2 = new Cina219();
+                cina2.Init();
+            }
+
+            base.OnClosing(e);
+        }
+
         private void Timer_Tick(object sender, EventArgs e)
         {
             getData();
@@ -79,11 +95,16 @@ namespace DataVisualTest
             TimeSpan ts = DateTime.Now - (DateTime)timer.Tag;
             if (ts.TotalSeconds > Duration_sec)
             {
-                timer.Stop();
-                cina.SetACBusPin(0, false);
+                stop();
                 btnStart.Content = "Start";
-                //Thread.Sleep(1000);
             }
+        }
+
+        void stop()
+        {
+            timer.Stop();
+            cina.SetACBusPin(0, false);
+            _sw.Close();
         }
 
         void getData()
@@ -101,10 +122,13 @@ namespace DataVisualTest
 
 
                 voltage.Add(new KeyValuePair<double, double>(ts.TotalMinutes, v));
-                if(i > 0)
-                    current.Add(new KeyValuePair<double, double>(ts.TotalMinutes, i));
-                if(p > 0)
-                    power.Add(new KeyValuePair<double, double>(ts.TotalMinutes, p));
+                if (voltage.Count > 1)
+                {
+                    if (i > 0)
+                        current.Add(new KeyValuePair<double, double>(ts.TotalMinutes, i));
+                    if (p > 0)
+                        power.Add(new KeyValuePair<double, double>(ts.TotalMinutes, p));
+                }
 
                 double rate_fromStart = 0;
                 if (power.Count > 0)
@@ -113,20 +137,34 @@ namespace DataVisualTest
                     rate_fromStart = deltaPower_fromStart / ts.TotalHours; // mw/h
                 }
 
-                lblMsg.Content = $"{dateTime} Power = {p}mW Voltage = {v}V  Current = {i}mA Rate = {rate_fromStart}mW/h TS={ts.TotalSeconds}s";
+                string guimsg = $"{dateTime.ToShortTimeString()}";
+                guimsg += $" {v.ToString("F2")}V";
+                guimsg += $" {i.ToString("F2")}mA";
+                guimsg += $" {p.ToString("F2")}mW";
+                guimsg += $" {rate_fromStart.ToString("F2")}mW/h";
+                guimsg += $" {ts.TotalSeconds.ToString("F2")}s";
+                lblMsg.Content = guimsg;
 
-                while (true)
+
+                writeLineDataToFile(_sw, $"{dateTime},{p},{v},{i}");
+            }
+        }
+
+        void writeLineDataToFile(StreamWriter sw, string data)
+        {
+            int trycount = 0;
+            while (true)
+            {
+                try
                 {
-                    try
-                    {
-                        sw.WriteLine($"{dateTime},{p},{v},{i}");
+                    sw.WriteLine(data);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    lblStatus.Text = $"Try# {trycount}, {DateTime.Now.ToShortTimeString()} {ex.Message}";
+                    if (trycount++ > 10)
                         break;
-                    }
-                    catch (Exception ex)
-                    {
-                        lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
-                    }
-
                 }
             }
         }
@@ -152,12 +190,18 @@ namespace DataVisualTest
                 timer.Tag = DateTime.Now;
                 timer.Start();
 
+                string filename = $"BatteryProfile{DateTime.Now.ToString("MMdd_HHmm")}.csv";
+                _sw = File.CreateText(filename);
+                _sw.AutoFlush = true;
+                _sw.WriteLine($"TimeStamp,Power(mW),Voltage(V),Current(mA)");
+
                 getData();
                 cina.SetACBusPin(0, true);
 
             }
             else
             {
+                stop();
                 btnStart.Content = "Start";
             }
         }
