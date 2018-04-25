@@ -22,6 +22,7 @@ using FTD2XX_NET;
 using System.IO;
 using System.Threading;
 using System.ComponentModel;
+using Microsoft.Win32;
 
 namespace DataVisualTest
 {
@@ -169,6 +170,32 @@ namespace DataVisualTest
             }
         }
 
+        private void Import_MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog dlg = new OpenFileDialog();
+            dlg.Filter = "*.csv|*.csv|All Files|*.*";
+            if (dlg.ShowDialog() ?? false)
+            {
+                string filename = dlg.FileName;
+
+                voltage = new ObservableCollection<KeyValuePair<double, double>>();
+
+                string data = "";
+                using (StreamReader sr = new StreamReader(filename))
+                {
+                    data = sr.ReadToEnd();
+                }
+
+                var lines = data.Split(new [] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                foreach(var line in lines)
+                {
+                    var fields = line.Split(new[] { ',' });
+                }
+                
+
+            }
+        }
+
         private void Button_StartClick(object sender, RoutedEventArgs e)
         {
             if (btnStart.Content.ToString() == "Start")
@@ -204,6 +231,11 @@ namespace DataVisualTest
                 stop();
                 btnStart.Content = "Start";
             }
+        }
+
+        public void ImportData()
+        {
+
         }
     }
 }
