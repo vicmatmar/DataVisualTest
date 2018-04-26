@@ -23,6 +23,8 @@ using System.IO;
 using System.Threading;
 using System.ComponentModel;
 using Microsoft.Win32;
+using System.Data;
+using System.Threading.Tasks;
 
 namespace DataVisualTest
 {
@@ -122,7 +124,7 @@ namespace DataVisualTest
                 float p = v * i;
 
 
-                voltage.Add(new KeyValuePair<double, double>(ts.TotalMinutes, v));
+                voltage.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, v));
                 if (voltage.Count > 1)
                 {
                     if (i > 0)
@@ -147,7 +149,7 @@ namespace DataVisualTest
                 lblMsg.Content = guimsg;
 
 
-                writeLineDataToFile(_sw, $"{dateTime},{p},{v},{i}");
+                writeLineDataToFile(_sw, $"{dateTime},{p},{v},{i},{ts.Ticks}");
             }
         }
 
@@ -174,27 +176,101 @@ namespace DataVisualTest
         {
             OpenFileDialog dlg = new OpenFileDialog();
             dlg.Filter = "*.csv|*.csv|All Files|*.*";
-            if (dlg.ShowDialog() ?? false)
+
+            bool b = dlg.ShowDialog() ?? false;
+            if (!b)
+                return;
+            string filename = dlg.FileName;
+            
+            Task<DataTable> task1 = new Task<DataTable>(() =>
             {
-                string filename = dlg.FileName;
+                // Convert Csv to data table
+                DataTable tdata = CsvToDataTable(filename);
+                return tdata;
+            });
 
-                voltage = new ObservableCollection<KeyValuePair<double, double>>();
+            task1.Start();
+            task1.Wait();
 
-                string data = "";
-                using (StreamReader sr = new StreamReader(filename))
-                {
-                    data = sr.ReadToEnd();
-                }
+            voltage = new ObservableCollection<KeyValuePair<double, double>>();
+            current = new ObservableCollection<KeyValuePair<double, double>>();
+            power = new ObservableCollection<KeyValuePair<double, double>>();
 
-                var lines = data.Split(new [] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-                foreach(var line in lines)
-                {
-                    var fields = line.Split(new[] { ',' });
-                }
-                
+
+            LineSeries series = new LineSeries();
+            series.Title = System.IO.Path.GetFileNameWithoutExtension(filename);
+            series.ItemsSource = voltage;
+            series.DependentValuePath = "Value";
+            series.IndependentValuePath = "Key";
+
+            lineVolts.Series.Add(series);
+            //lineVolts.DataContext = voltage;
+
+            lineCurrent.DataContext = current;
+            linePower.DataContext = power;
+
+            DataTable data = (DataTable)task1.Result;
+            foreach (DataRow r in data.Rows)
+            {
+                TimeSpan ts = new TimeSpan((long)r["Duration"]);
+
+                voltage.Add(
+                     new KeyValuePair<double, double>(
+                         ts.TotalMilliseconds, (double)r["Voltage(V)"]));
+
 
             }
         }
+
+        DataTable CsvToDataTable(string filename)
+        {
+            // Read the file
+            string data = "";
+            using (StreamReader sr = new StreamReader(filename))
+            {
+                data = sr.ReadToEnd();
+            }
+
+            // Split to lines
+            var lines = data.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            if (lines.Length == 0)
+                throw new Exception("No lines");
+
+            // Create table columns
+            string[] col_names = lines[0].Split(new[] { ',' });
+            DataTable table = new DataTable(filename);
+            foreach (var cname in col_names)
+            {
+                DataColumn c = new DataColumn(cname, typeof(double));
+                if (cname == "TimeStamp")
+                    c = new DataColumn(cname, typeof(DateTime));
+                else if(cname == "Duration")
+                    c = new DataColumn(cname, typeof(long));
+                table.Columns.Add(c);
+            }
+
+            /*
+            int iDate = Array.FindIndex<string>(col_names, n => n == "TimeStamp");
+            int iPower = Array.FindIndex<string>(col_names, n => n.StartsWith("Power"));
+            int iVolatge = Array.FindIndex<string>(col_names, n => n.StartsWith("Voltage"));
+            int iCurrent = Array.FindIndex<string>(col_names, n => n.StartsWith("Current"));
+            */
+
+            // get the rows
+            for (int i = 1; i < lines.Length; i++)
+            {
+                var fields = lines[i].Split(new[] { ',' });
+                table.Rows.Add(fields);
+            }
+
+            return table;
+        }
+
+        private void Clear_Voltage(object sender, RoutedEventArgs e)
+        {
+            lineVolts.Series.Clear();
+        }
+
 
         private void Button_StartClick(object sender, RoutedEventArgs e)
         {
@@ -220,7 +296,7 @@ namespace DataVisualTest
                 string filename = $"BatteryProfile{DateTime.Now.ToString("MMdd_HHmm")}.csv";
                 _sw = File.CreateText(filename);
                 _sw.AutoFlush = true;
-                _sw.WriteLine($"TimeStamp,Power(mW),Voltage(V),Current(mA)");
+                _sw.WriteLine($"TimeStamp,Power(mW),Voltage(V),Current(mA),Duration");
 
                 getData();
                 cina.SetACBusPin(0, true);
