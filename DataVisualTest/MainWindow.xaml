@@ -59,12 +59,6 @@
                         MinHeight="350"
                         Background="LightBlue" Foreground="DarkBlue" 
                         IsEnabled="True">
-                    <chartingToolkit:Chart.LegendStyle>
-                        <Style TargetType="Control">
-                            <Setter Property="Width" Value="0" />
-                            <Setter Property="Height" Value="0" />
-                        </Style>
-                    </chartingToolkit:Chart.LegendStyle>
 
                     <chartingToolkit:LineSeries Title="Power"  
                                 ItemsSource="{Binding}" 
@@ -72,7 +66,7 @@
                                 IndependentValuePath="Key"
                                 IsSelectionEnabled="True">
                         <chartingToolkit:LineSeries.IndependentAxis>
-                            <chartingToolkit:LinearAxis Orientation="X" Title="Duration (min)" Minimum="0"/>
+                            <chartingToolkit:LinearAxis Orientation="X" Title="Duration (ms)" Minimum="0"/>
                         </chartingToolkit:LineSeries.IndependentAxis>
                         <chartingToolkit:LineSeries.DependentRangeAxis>
                             <chartingToolkit:LinearAxis Name="PowerY" Orientation="Y" Title="Power (mW)"/>
@@ -88,6 +82,9 @@
                         Background="LightBlue" Foreground="DarkBlue" 
                         IsEnabled="True"
                     >
+                
+                
+                
                 <chartingToolkit:Chart.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="Clear" Click="Clear_Voltage"></MenuItem>
@@ -103,12 +100,10 @@
                 </chartingToolkit:Chart.LegendStyle>-->
 
                 <chartingToolkit:LineSeries Title="Voltage"
-                                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                                     ItemsSource="{Binding}" 
                                     DependentValuePath="Value"
                                     IndependentValuePath="Key"
-                                    IsSelectionEnabled="True"
-                                    >
+                                    IsSelectionEnabled="True">
 
                     <!--<chartingToolkit:LineSeries.DataPointStyle>
                         <Style TargetType="chartingToolkit:LineDataPoint">
@@ -116,11 +111,10 @@
                         </Style>
                     </chartingToolkit:LineSeries.DataPointStyle>-->
 
-
                     <chartingToolkit:LineSeries.IndependentAxis>
-                        <chartingToolkit:LinearAxis Orientation="X" Title="Duration (min)" />
+                        <chartingToolkit:LinearAxis Orientation="X" Title="Duration (ms)" />
                     </chartingToolkit:LineSeries.IndependentAxis>
-                    
+
                     <chartingToolkit:LineSeries.DependentRangeAxis>
                         <chartingToolkit:LinearAxis Orientation="Y" Title="Volatge (V)"/>
                     </chartingToolkit:LineSeries.DependentRangeAxis>
@@ -135,20 +129,13 @@
                         Background="LightBlue" Foreground="DarkBlue" 
                         IsEnabled="True">
 
-                <chartingToolkit:Chart.LegendStyle>
-                    <Style TargetType="Control">
-                        <Setter Property="Width" Value="0" />
-                        <Setter Property="Height" Value="0" />
-                    </Style>
-                </chartingToolkit:Chart.LegendStyle>
-
                 <chartingToolkit:LineSeries Title="Current"  
                                     ItemsSource="{Binding}" 
                                     DependentValuePath="Value"
                                     IndependentValuePath="Key"
                                     IsSelectionEnabled="True">
                     <chartingToolkit:LineSeries.IndependentAxis>
-                        <chartingToolkit:LinearAxis Orientation="X" Title="Duration (min)" Minimum="0"/>
+                        <chartingToolkit:LinearAxis Orientation="X" Title="Duration (ms)" Minimum="0"/>
                     </chartingToolkit:LineSeries.IndependentAxis>
                     <chartingToolkit:LineSeries.DependentRangeAxis>
                         <chartingToolkit:LinearAxis Orientation="Y" Title="Current (mA)"/>

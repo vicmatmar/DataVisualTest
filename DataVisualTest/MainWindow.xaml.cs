@@ -39,7 +39,6 @@ namespace DataVisualTest
         Random random = new Random(DateTime.Now.Millisecond);
 
         Cina219 cina = new Cina219();
-        //private FTDI.FT_DEVICE_INFO_NODE[] devList = new FTDI.FT_DEVICE_INFO_NODE[100];
 
         StreamWriter _sw;
 
@@ -70,6 +69,7 @@ namespace DataVisualTest
             {
                 lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
             }
+
         }
 
         protected override void OnClosing(CancelEventArgs e)
@@ -128,9 +128,9 @@ namespace DataVisualTest
                 if (voltage.Count > 1)
                 {
                     if (i > 0)
-                        current.Add(new KeyValuePair<double, double>(ts.TotalMinutes, i));
+                        current.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, i));
                     if (p > 0)
-                        power.Add(new KeyValuePair<double, double>(ts.TotalMinutes, p));
+                        power.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, p));
                 }
 
                 double rate_fromStart = 0;
@@ -180,46 +180,74 @@ namespace DataVisualTest
             bool b = dlg.ShowDialog() ?? false;
             if (!b)
                 return;
+
             string filename = dlg.FileName;
-            
-            Task<DataTable> task1 = new Task<DataTable>(() =>
+
+            importData(filename);
+
+        }
+
+        async void importData(string filename)
+        {
+            List<KeyValuePair<double, double>> volts_list = new List<KeyValuePair<double, double>>();
+            List<KeyValuePair<double, double>> current_list = new List<KeyValuePair<double, double>>();
+            List<KeyValuePair<double, double>> power_list = new List<KeyValuePair<double, double>>();
+
+            await Task.Run(() =>
             {
-                // Convert Csv to data table
                 DataTable tdata = CsvToDataTable(filename);
-                return tdata;
+
+                foreach (DataRow r in tdata.Rows)
+                {
+                    TimeSpan ts = new TimeSpan((long)r["Duration"]);
+
+                    volts_list.Add(
+                         new KeyValuePair<double, double>(
+                             ts.TotalMilliseconds, (double)r["Voltage(V)"]));
+
+                    current_list.Add(
+                         new KeyValuePair<double, double>(
+                             ts.TotalMilliseconds, (double)r["Current(mA)"]));
+
+                    power_list.Add(
+                         new KeyValuePair<double, double>(
+                             ts.TotalMilliseconds, (double)r["Power(mW)"]));
+                }
             });
 
-            task1.Start();
-            task1.Wait();
+            if (current_list.Count > 0)
+                current_list.RemoveAt(0);
+            if (power_list.Count > 0)
+                power_list.RemoveAt(0);
 
-            voltage = new ObservableCollection<KeyValuePair<double, double>>();
-            current = new ObservableCollection<KeyValuePair<double, double>>();
-            power = new ObservableCollection<KeyValuePair<double, double>>();
-
-
+            string title = System.IO.Path.GetFileNameWithoutExtension(filename);
             LineSeries series = new LineSeries();
-            series.Title = System.IO.Path.GetFileNameWithoutExtension(filename);
-            series.ItemsSource = voltage;
+            series.Title = title;
+            series.ItemsSource = volts_list;
             series.DependentValuePath = "Value";
             series.IndependentValuePath = "Key";
-
+            series.IndependentAxis = ((LineSeries)lineVolts.Series[0]).IndependentAxis;
+            series.DependentRangeAxis = ((LineSeries)lineVolts.Series[0]).DependentRangeAxis;
             lineVolts.Series.Add(series);
-            //lineVolts.DataContext = voltage;
 
-            lineCurrent.DataContext = current;
-            linePower.DataContext = power;
+            series = new LineSeries();
+            series.Title = title;
+            series.ItemsSource = current_list;
+            series.DependentValuePath = "Value";
+            series.IndependentValuePath = "Key";
+            series.IndependentAxis = ((LineSeries)lineCurrent.Series[0]).IndependentAxis;
+            series.DependentRangeAxis = ((LineSeries)lineCurrent.Series[0]).DependentRangeAxis;
+            lineCurrent.Series.Add(series);
 
-            DataTable data = (DataTable)task1.Result;
-            foreach (DataRow r in data.Rows)
-            {
-                TimeSpan ts = new TimeSpan((long)r["Duration"]);
+            series = new LineSeries();
+            series.Title = title;
+            series.ItemsSource = power_list;
+            series.DependentValuePath = "Value";
+            series.IndependentValuePath = "Key";
+            series.IndependentAxis = ((LineSeries)linePower.Series[0]).IndependentAxis;
+            series.DependentRangeAxis = ((LineSeries)linePower.Series[0]).DependentRangeAxis;
+            linePower.Series.Add(series);
 
-                voltage.Add(
-                     new KeyValuePair<double, double>(
-                         ts.TotalMilliseconds, (double)r["Voltage(V)"]));
-
-
-            }
         }
 
         DataTable CsvToDataTable(string filename)
@@ -244,7 +272,7 @@ namespace DataVisualTest
                 DataColumn c = new DataColumn(cname, typeof(double));
                 if (cname == "TimeStamp")
                     c = new DataColumn(cname, typeof(DateTime));
-                else if(cname == "Duration")
+                else if (cname == "Duration")
                     c = new DataColumn(cname, typeof(long));
                 table.Columns.Add(c);
             }
@@ -268,7 +296,13 @@ namespace DataVisualTest
 
         private void Clear_Voltage(object sender, RoutedEventArgs e)
         {
-            lineVolts.Series.Clear();
+
+            int count = lineVolts.Series.Count;
+            for (int i = 1; i < count; i++)
+            {
+                lineVolts.Series.RemoveAt(1);
+            }
+
         }
 
 
@@ -287,18 +321,17 @@ namespace DataVisualTest
                 lineCurrent.DataContext = current;
                 linePower.DataContext = power;
 
-
-                timer.Interval = new TimeSpan(0, 0, 0, 0, Int32.Parse(txtInterval.Text));
-
-                timer.Tag = DateTime.Now;
-                timer.Start();
-
                 string filename = $"BatteryProfile{DateTime.Now.ToString("MMdd_HHmm")}.csv";
                 _sw = File.CreateText(filename);
                 _sw.AutoFlush = true;
                 _sw.WriteLine($"TimeStamp,Power(mW),Voltage(V),Current(mA),Duration");
 
+                timer.Interval = new TimeSpan(0, 0, 0, 0, Int32.Parse(txtInterval.Text));
+                timer.Tag = DateTime.Now;
+                timer.Start();
+
                 getData();
+
                 cina.SetACBusPin(0, true);
 
             }
@@ -309,9 +342,5 @@ namespace DataVisualTest
             }
         }
 
-        public void ImportData()
-        {
-
-        }
     }
 }
