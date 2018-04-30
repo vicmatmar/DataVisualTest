@@ -271,6 +271,13 @@ namespace CINALib
 
         }
 
+        public async Task<float>GetVoltageAsync()
+        {
+            bool ovf = false;
+
+            return await Task<float>.Run(() => GetVoltage(ref ovf));
+        }
+
         public float GetVoltage(ref bool ovf)
         {
             _fti2c.RegisterPointerSet(INA219_ADDRESS, FTI2C.RW.WRITE, INA219_REG_BUSVOLTAGE);
@@ -282,6 +289,11 @@ namespace CINALib
             volts_reg = (Int16)(volts_reg >> 3);
             float volts = volts_reg * 4e-3f;
             return volts;
+        }
+
+        public async Task<float> GetCurrentAsync()
+        {
+            return await Task<float>.Run(() => GetCurrent());
         }
 
         /// <summary>

@@ -135,6 +135,11 @@ namespace CINALib
 
         }
 
+        public async Task<Int16> ReadRegisterAsync(byte slave_addr)
+        {
+            return await Task<Int16>.Run(() => { return ReadRegister(slave_addr); });
+        }
+
         public Int16 ReadRegister(byte slave_addr)
         {
             _ftdi.Purge(FTDI.FT_PURGE.FT_PURGE_RX | FTDI.FT_PURGE.FT_PURGE_TX);

@@ -80,7 +80,7 @@ namespace DataVisualTest
                 cina.Init();
                 cina.SetACBusPin(0, false);
             }
-            catch (Exception ex)
+            catch
             {
                 // and just in case that failed
                 cina.Dispose();
@@ -91,13 +91,15 @@ namespace DataVisualTest
             base.OnClosing(e);
         }
 
-        private void Timer_Tick(object sender, EventArgs e)
+        async void Timer_Tick(object sender, EventArgs e)
         {
-            getData();
+            await getDataAsync();
 
             TimeSpan ts = DateTime.Now - (DateTime)timer.Tag;
             if (ts.TotalSeconds > Duration_sec)
             {
+                //string msg = t.Result;  // This forces the task to wait...
+
                 stop();
                 btnStart.Content = "Start";
             }
@@ -106,61 +108,59 @@ namespace DataVisualTest
         void stop()
         {
             timer.Stop();
+
             cina.SetACBusPin(0, false);
+
             _sw.Close();
         }
 
-        void getData()
+        async Task getDataAsync()
         {
-            lock (dataLock)
+            DateTime dateTime = DateTime.Now;
+            DateTime startTime = (DateTime)timer.Tag;
+            TimeSpan ts = DateTime.Now - startTime;
+
+            //bool ovf = false;
+            float v = await cina.GetVoltageAsync();
+            float i = await cina.GetCurrentAsync();
+            float p = v * i;
+
+            voltage.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, v));
+            if (voltage.Count > 1)
             {
-                DateTime dateTime = DateTime.Now;
-                DateTime startTime = (DateTime)timer.Tag;
-                TimeSpan ts = DateTime.Now - startTime;
-
-                bool ovf = false;
-                float v = cina.GetVoltage(ref ovf);
-                float i = cina.GetCurrent();
-                float p = v * i;
-
-
-                voltage.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, v));
-                if (voltage.Count > 1)
-                {
-                    if (i > 0)
-                        current.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, i));
-                    if (p > 0)
-                        power.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, p));
-                }
-
-                double rate_fromStart = 0;
-                if (power.Count > 0)
-                {
-                    double deltaPower_fromStart = p - power[0].Value;
-                    rate_fromStart = deltaPower_fromStart / ts.TotalHours; // mw/h
-                }
-
-                string guimsg = $"{dateTime.ToShortTimeString()}";
-                guimsg += $" {v.ToString("F2")}V";
-                guimsg += $" {i.ToString("F2")}mA";
-                guimsg += $" {p.ToString("F2")}mW";
-                guimsg += $" {rate_fromStart.ToString("F2")}mW/h";
-                guimsg += $" {ts.TotalSeconds.ToString("F2")}s";
-                lblMsg.Content = guimsg;
-
-
-                writeLineDataToFile(_sw, $"{dateTime},{p},{v},{i},{ts.Ticks}");
+//                if (i > 0)
+                    current.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, i));
+//                if (p > 0)
+                    power.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, p));
             }
+
+            double rate_fromStart = 0;
+            if (power.Count > 0)
+            {
+                double deltaPower_fromStart = p - power[0].Value;
+                rate_fromStart = deltaPower_fromStart / ts.TotalHours; // mw/h
+            }
+
+            string guimsg = $"{dateTime.ToShortTimeString()}";
+            guimsg += $" {v.ToString("F2")}V";
+            guimsg += $" {i.ToString("F2")}mA";
+            guimsg += $" {p.ToString("F2")}mW";
+            guimsg += $" {rate_fromStart.ToString("F2")}mW/h";
+            guimsg += $" {ts.TotalSeconds.ToString("F2")}s";
+            lblMsg.Content = guimsg;
+
+            await writeLineDataToFileAsync(_sw, $"{dateTime},{p},{v},{i},{ts.Ticks}");
+
         }
 
-        void writeLineDataToFile(StreamWriter sw, string data)
+        async Task writeLineDataToFileAsync(StreamWriter sw, string data)
         {
             int trycount = 0;
             while (true)
             {
                 try
                 {
-                    sw.WriteLine(data);
+                    await sw.WriteLineAsync(data);
                     break;
                 }
                 catch (Exception ex)
@@ -171,7 +171,6 @@ namespace DataVisualTest
                 }
             }
         }
-
         private void Import_MenuItem_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog dlg = new OpenFileDialog();
@@ -181,49 +180,18 @@ namespace DataVisualTest
             if (!b)
                 return;
 
-            string filename = dlg.FileName;
-
-            importData(filename);
-
+            Task t = ImportDataAndUpdateCharts(dlg.FileName);
         }
 
-        async void importData(string filename)
+        private async Task ImportDataAndUpdateCharts(string filename)
         {
-            List<KeyValuePair<double, double>> volts_list = new List<KeyValuePair<double, double>>();
-            List<KeyValuePair<double, double>> current_list = new List<KeyValuePair<double, double>>();
-            List<KeyValuePair<double, double>> power_list = new List<KeyValuePair<double, double>>();
-
-            await Task.Run(() =>
-            {
-                DataTable tdata = CsvToDataTable(filename);
-
-                foreach (DataRow r in tdata.Rows)
-                {
-                    TimeSpan ts = new TimeSpan((long)r["Duration"]);
-
-                    volts_list.Add(
-                         new KeyValuePair<double, double>(
-                             ts.TotalMilliseconds, (double)r["Voltage(V)"]));
-
-                    current_list.Add(
-                         new KeyValuePair<double, double>(
-                             ts.TotalMilliseconds, (double)r["Current(mA)"]));
-
-                    power_list.Add(
-                         new KeyValuePair<double, double>(
-                             ts.TotalMilliseconds, (double)r["Power(mW)"]));
-                }
-            });
-
-            if (current_list.Count > 0)
-                current_list.RemoveAt(0);
-            if (power_list.Count > 0)
-                power_list.RemoveAt(0);
+            var map = await ImportData(filename);
 
             string title = System.IO.Path.GetFileNameWithoutExtension(filename);
+
             LineSeries series = new LineSeries();
             series.Title = title;
-            series.ItemsSource = volts_list;
+            series.ItemsSource = map["Voltage"];
             series.DependentValuePath = "Value";
             series.IndependentValuePath = "Key";
             series.IndependentAxis = ((LineSeries)lineVolts.Series[0]).IndependentAxis;
@@ -232,7 +200,7 @@ namespace DataVisualTest
 
             series = new LineSeries();
             series.Title = title;
-            series.ItemsSource = current_list;
+            series.ItemsSource = map["Current"];
             series.DependentValuePath = "Value";
             series.IndependentValuePath = "Key";
             series.IndependentAxis = ((LineSeries)lineCurrent.Series[0]).IndependentAxis;
@@ -241,7 +209,7 @@ namespace DataVisualTest
 
             series = new LineSeries();
             series.Title = title;
-            series.ItemsSource = power_list;
+            series.ItemsSource = map["Power"];
             series.DependentValuePath = "Value";
             series.IndependentValuePath = "Key";
             series.IndependentAxis = ((LineSeries)linePower.Series[0]).IndependentAxis;
@@ -250,13 +218,52 @@ namespace DataVisualTest
 
         }
 
-        DataTable CsvToDataTable(string filename)
+        async Task<Dictionary<string, List<KeyValuePair<double, double>>>> ImportData(string filename)
+        {
+            List<KeyValuePair<double, double>> volts_list = new List<KeyValuePair<double, double>>();
+            List<KeyValuePair<double, double>> current_list = new List<KeyValuePair<double, double>>();
+            List<KeyValuePair<double, double>> power_list = new List<KeyValuePair<double, double>>();
+
+            DataTable tdata = await CsvToDataTableAsync(filename);
+
+            foreach (DataRow r in tdata.Rows)
+            {
+                TimeSpan ts = new TimeSpan((long)r["Duration"]);
+
+                volts_list.Add(
+                     new KeyValuePair<double, double>(
+                         ts.TotalMilliseconds, (double)r["Voltage(V)"]));
+
+                current_list.Add(
+                     new KeyValuePair<double, double>(
+                         ts.TotalMilliseconds, (double)r["Current(mA)"]));
+
+                power_list.Add(
+                     new KeyValuePair<double, double>(
+                         ts.TotalMilliseconds, (double)r["Power(mW)"]));
+            }
+
+            if (current_list.Count > 0)
+                current_list.RemoveAt(0);
+            if (power_list.Count > 0)
+                power_list.RemoveAt(0);
+
+            Dictionary<string, List<KeyValuePair<double, double>>> map = new Dictionary<string, List<KeyValuePair<double, double>>>();
+            map.Add("Voltage", volts_list);
+            map.Add("Current", current_list);
+            map.Add("Power", power_list);
+
+            return map;
+
+        }
+
+        async Task<DataTable> CsvToDataTableAsync(string filename)
         {
             // Read the file
             string data = "";
-            using (StreamReader sr = new StreamReader(filename))
+            using (StreamReader sr = File.OpenText(filename))
             {
-                data = sr.ReadToEnd();
+                data = await sr.ReadToEndAsync();
             }
 
             // Split to lines
@@ -294,6 +301,7 @@ namespace DataVisualTest
             return table;
         }
 
+
         private void Clear_Voltage(object sender, RoutedEventArgs e)
         {
 
@@ -327,12 +335,13 @@ namespace DataVisualTest
                 _sw.WriteLine($"TimeStamp,Power(mW),Voltage(V),Current(mA),Duration");
 
                 timer.Interval = new TimeSpan(0, 0, 0, 0, Int32.Parse(txtInterval.Text));
+
+                cina.SetACBusPin(0, true);
                 timer.Tag = DateTime.Now;
                 timer.Start();
 
-                getData();
+                Task t = getDataAsync();
 
-                cina.SetACBusPin(0, true);
 
             }
             else
