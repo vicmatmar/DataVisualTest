@@ -26,6 +26,8 @@ using Microsoft.Win32;
 using System.Data;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace DataVisualTest
 {
@@ -100,14 +102,12 @@ namespace DataVisualTest
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
         }
 
-
-
-        //private bool _hasImportedData = false;
         public bool HasImportedData
         {
-            get { return (linePower.Series.Count > 1); }
+            get {
+                return (linePower.Series.Count > 1 || lineVolts.Series.Count > 1) || lineCurrent.Series.Count > 1;
+            }
             set {
-                //_hasImportedData = value;
                 OnPropertyChanged("HasImportedData");
             }
         }
@@ -203,9 +203,7 @@ namespace DataVisualTest
 
             await ImportDataAndUpdateCharts(dlg.FileName);
 
-            //ClearImportedMenuItem.IsEnabled = true;
-            //HasImportedData = true;
-            OnPropertyChanged("HasImportedData");
+            HasImportedData = true;
         }
 
         private async Task ImportDataAndUpdateCharts(string filename)
@@ -343,7 +341,7 @@ namespace DataVisualTest
             {
                 linePower.Series.RemoveAt(1);
             }
-            OnPropertyChanged("HasImportedData");
+            HasImportedData = false;
         }
 
         private void Close_Window_MenuItem_Click(object sender, RoutedEventArgs e)
@@ -362,6 +360,10 @@ namespace DataVisualTest
 
         }
 
+        string getValidFileName(string fileName)
+        {
+            return System.IO.Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
+        }
 
         private void Button_StartClick(object sender, RoutedEventArgs e)
         {
@@ -378,7 +380,9 @@ namespace DataVisualTest
                 lineCurrent.DataContext = current;
                 linePower.DataContext = power;
 
-                string filename = $"BatteryProfile{DateTime.Now.ToString("MMdd_HHmm")}.csv";
+                //string filename = $"BatteryProfile{DateTime.Now.ToString("MMdd_HHmm")}.csv";
+                string filename = $"{getValidFileName(txtFileName.Text)}.csv";
+
                 _sw = File.CreateText(filename);
                 _sw.AutoFlush = true;
                 _sw.WriteLine($"TimeStamp,Power(mW),Voltage(V),Current(mA),Duration");
@@ -399,6 +403,22 @@ namespace DataVisualTest
                 btnStart.Content = "Start";
             }
         }
+    }
 
+    public class FileNameRule : ValidationRule
+    {
+        public override ValidationResult Validate(object value, CultureInfo cultureInfo)
+        {
+            string fileName = (string)value;
+
+            string strTheseAreInvalidFileNameChars = new string(System.IO.Path.GetInvalidFileNameChars());
+            Regex regInvalidFileName = new Regex("[" + Regex.Escape(strTheseAreInvalidFileNameChars) + "]");
+
+            bool isValidName = !regInvalidFileName.IsMatch(fileName);
+            if (isValidName)
+                return ValidationResult.ValidResult;
+            else
+                return new ValidationResult(false, "Invalid character");
+        }
     }
 }
