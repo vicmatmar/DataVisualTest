@@ -25,13 +25,14 @@ using System.ComponentModel;
 using Microsoft.Win32;
 using System.Data;
 using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 
 namespace DataVisualTest
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window , INotifyPropertyChanged
     {
         ObservableCollection<KeyValuePair<double, double>> voltage, current, power;
 
@@ -70,6 +71,8 @@ namespace DataVisualTest
                 lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
             }
 
+            ClearImportedMenuItem.DataContext = this;
+
         }
 
         protected override void OnClosing(CancelEventArgs e)
@@ -89,6 +92,24 @@ namespace DataVisualTest
             }
 
             base.OnClosing(e);
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void OnPropertyChanged(string property)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
+        }
+
+
+
+        //private bool _hasImportedData = false;
+        public bool HasImportedData
+        {
+            get { return (linePower.Series.Count > 1); }
+            set {
+                //_hasImportedData = value;
+                OnPropertyChanged("HasImportedData");
+            }
         }
 
         async void Timer_Tick(object sender, EventArgs e)
@@ -171,7 +192,7 @@ namespace DataVisualTest
                 }
             }
         }
-        private void Import_MenuItem_Click(object sender, RoutedEventArgs e)
+        async void Import_MenuItem_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog dlg = new OpenFileDialog();
             dlg.Filter = "*.csv|*.csv|All Files|*.*";
@@ -180,7 +201,11 @@ namespace DataVisualTest
             if (!b)
                 return;
 
-            Task t = ImportDataAndUpdateCharts(dlg.FileName);
+            await ImportDataAndUpdateCharts(dlg.FileName);
+
+            //ClearImportedMenuItem.IsEnabled = true;
+            //HasImportedData = true;
+            OnPropertyChanged("HasImportedData");
         }
 
         private async Task ImportDataAndUpdateCharts(string filename)
@@ -301,6 +326,30 @@ namespace DataVisualTest
             return table;
         }
 
+        private void Clear_Imported_Charts_MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            int count = lineVolts.Series.Count;
+            for (int i = 1; i < count; i++)
+            {
+                lineVolts.Series.RemoveAt(1);
+            }
+            count = lineCurrent.Series.Count;
+            for (int i = 1; i < count; i++)
+            {
+                lineCurrent.Series.RemoveAt(1);
+            }
+            count = linePower.Series.Count;
+            for (int i = 1; i < count; i++)
+            {
+                linePower.Series.RemoveAt(1);
+            }
+            OnPropertyChanged("HasImportedData");
+        }
+
+        private void Close_Window_MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
 
         private void Clear_Voltage(object sender, RoutedEventArgs e)
         {

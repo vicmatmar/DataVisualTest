@@ -1,10 +1,11 @@
-﻿<Window x:Class="DataVisualTest.MainWindow"
+﻿<Window
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DataVisualTest"
         xmlns:chartingToolkit="clr-namespace:System.Windows.Controls.DataVisualization.Charting;assembly=System.Windows.Controls.DataVisualization.Toolkit"
+        xmlns:Properties="clr-namespace:DataVisualTest.Properties" x:Class="DataVisualTest.MainWindow"
         mc:Ignorable="d"
         Title="Power Monitor" 
         Width="1024" 
@@ -16,37 +17,40 @@
             <MenuItem Header="_File">
                 <MenuItem Header="_Import" Click="Import_MenuItem_Click"/>
                 <Separator />
-                <MenuItem Header="_Exit" />
+                <MenuItem Header="_Exit" Click="Close_Window_MenuItem_Click" />
+            </MenuItem>
+            <MenuItem Header="_Charts">
+                <MenuItem Name="ClearImportedMenuItem" Header="Clear _Imported" Click="Clear_Imported_Charts_MenuItem_Click" IsEnabled="{Binding HasImportedData}"></MenuItem>
             </MenuItem>
         </Menu>
 
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition></ColumnDefinition>
-                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
             </Grid.ColumnDefinitions>
 
             <Grid.RowDefinitions>
-                <RowDefinition Height="80"></RowDefinition>
-                <RowDefinition ></RowDefinition>
-                <RowDefinition ></RowDefinition>
-                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="80"/>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition Height="30"/>
             </Grid.RowDefinitions>
 
             <StackPanel Grid.ColumnSpan="2">
 
                 <ToolBar BorderBrush="Black" BorderThickness="1">
-                    <Button Name="btnStart" Content="Start" Width="40" Click="Button_StartClick" Background="LightBlue" BorderBrush="Black"></Button>
+                    <Button x:Name="btnStart" Content="Start" Width="40" Click="Button_StartClick" Background="LightBlue" BorderBrush="Black"/>
                     <StackPanel >
-                        <Label Content="Interval(ms):"></Label>
-                        <TextBox Grid.Column="1" Name="txtInterval" Text="200" Width="35" TextAlignment="Right"></TextBox>
+                        <Label Content="Interval(ms):"/>
+                        <TextBox Grid.Column="1" x:Name="txtInterval" Text="200" Width="35" TextAlignment="Right"/>
                     </StackPanel>
                     <StackPanel>
-                        <Label Content="Duration(s):"></Label>
-                        <TextBox Name="txtDuration" Text="15" Width="30" TextAlignment="Right"></TextBox>
+                        <Label Content="Duration(s):"/>
+                        <TextBox x:Name="txtDuration" Text="15" Width="30" TextAlignment="Right"/>
                     </StackPanel>
                 </ToolBar>
-                <Label Name="lblMsg" Height="30" Content="{Binding}" Background="LightBlue" BorderThickness="1" BorderBrush="Black"></Label>
+                <Label x:Name="lblMsg" Height="30" Content="{Binding}" Background="LightBlue" BorderThickness="1" BorderBrush="Black"/>
             </StackPanel>
 
             <DockPanel 
@@ -55,7 +59,7 @@
                 >
 
                 <chartingToolkit:Chart 
-                        Name="linePower" Title="Power" 
+                        x:Name="linePower" Title="Power" 
                         MinHeight="350"
                         Background="LightBlue" Foreground="DarkBlue" 
                         IsEnabled="True">
@@ -69,7 +73,7 @@
                             <chartingToolkit:LinearAxis Orientation="X" Title="Duration (ms)" Minimum="0"/>
                         </chartingToolkit:LineSeries.IndependentAxis>
                         <chartingToolkit:LineSeries.DependentRangeAxis>
-                            <chartingToolkit:LinearAxis Name="PowerY" Orientation="Y" Title="Power (mW)"/>
+                            <chartingToolkit:LinearAxis x:Name="PowerY" Orientation="Y" Title="Power (mW)"/>
                         </chartingToolkit:LineSeries.DependentRangeAxis>
                     </chartingToolkit:LineSeries>
                 </chartingToolkit:Chart>
@@ -77,17 +81,17 @@
 
 
             <chartingToolkit:Chart 
-                        Name="lineVolts" Title="Volts" 
+                        x:Name="lineVolts" Title="Volts" 
                         Grid.Column="0" Grid.Row="2" 
                         Background="LightBlue" Foreground="DarkBlue" 
                         IsEnabled="True"
                     >
-                
-                
-                
+
+
+
                 <chartingToolkit:Chart.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Clear" Click="Clear_Voltage"></MenuItem>
+                        <MenuItem Header="Clear" Click="Clear_Voltage"/>
                     </ContextMenu>
                 </chartingToolkit:Chart.ContextMenu>
 
@@ -123,7 +127,7 @@
             </chartingToolkit:Chart>
 
             <chartingToolkit:Chart 
-                    Name="lineCurrent" Title="Current"
+                    x:Name="lineCurrent" Title="Current"
                         Grid.Column="1" Grid.Row="2" 
                         MinHeight="300" 
                         Background="LightBlue" Foreground="DarkBlue" 
@@ -144,7 +148,7 @@
             </chartingToolkit:Chart>
 
             <StatusBarItem Grid.Row="3" Grid.ColumnSpan="2">
-                <TextBlock Name="lblStatus"></TextBlock>
+                <TextBlock x:Name="lblStatus"/>
             </StatusBarItem>
 
         </Grid>
