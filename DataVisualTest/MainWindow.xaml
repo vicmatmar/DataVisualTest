@@ -54,8 +54,12 @@
                         <TextBox Grid.Column="1" x:Name="txtInterval" Text="200" Width="35" TextAlignment="Right"/>
                     </StackPanel>
                     <StackPanel>
-                        <Label Content="Duration(s):"/>
-                        <TextBox x:Name="txtDuration" Text="15" Width="30" TextAlignment="Right"/>
+                        <Label Content="On Duration(s):"/>
+                        <TextBox x:Name="txtDuration" Text="15.0" Width="30" TextAlignment="Right"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <Label Content="Rest(s):"/>
+                        <TextBox x:Name="txtRest" Text="2.0" Width="30" TextAlignment="Right"/>
                     </StackPanel>
                 </ToolBar>
                 <Label x:Name="lblMsg" Height="30" Content="{Binding}" Background="LightBlue" BorderThickness="1" BorderBrush="Black"/>

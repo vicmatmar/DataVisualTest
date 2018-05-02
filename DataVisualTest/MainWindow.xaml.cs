@@ -36,19 +36,17 @@ namespace DataVisualTest
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        ObservableCollection<KeyValuePair<double, double>> voltage, current, power;
+        ObservableCollection<KeyValuePair<double, double>> voltage_colection, current_colection, power_collaction;
 
-        DispatcherTimer timer;
+        DispatcherTimer _timer;
         Random random = new Random(DateTime.Now.Millisecond);
 
-        Cina219 cina = new Cina219();
+        Cina219 _cina = new Cina219();
 
         StreamWriter _sw;
 
-        int _duration_sec = 60;
-        public int Duration_sec { get => _duration_sec; set => _duration_sec = value; }
-
-        Object dataLock = new Object();
+        double _load_on_duration_sec = 15;
+        double _rest_duration_sec = 2;
 
 
         public MainWindow()
@@ -59,13 +57,11 @@ namespace DataVisualTest
 
             try
             {
-                cina.UnitCurrent = Cina219.CurrentUnit.mA;
-                cina.Init();
-                cina.SetACBusPin(0, false);
+                _cina.UnitCurrent = Cina219.CurrentUnit.mA;
+                _cina.Init();
+                _cina.SetACBusPin(0, false);
 
-
-                timer = new DispatcherTimer();
-                timer.Tick += Timer_Tick;
+                _timer = new DispatcherTimer();
 
             }
             catch (Exception ex)
@@ -82,13 +78,13 @@ namespace DataVisualTest
             try
             {
                 // Try to turn relay off
-                cina.Init();
-                cina.SetACBusPin(0, false);
+                _cina.Init();
+                _cina.SetACBusPin(0, false);
             }
             catch
             {
                 // and just in case that failed
-                cina.Dispose();
+                _cina.Dispose();
                 Cina219 cina2 = new Cina219();
                 cina2.Init();
             }
@@ -114,7 +110,7 @@ namespace DataVisualTest
             }
         }
 
-        void Timer_Tick(object sender, EventArgs e)
+        void loadOn_timer_tick(object sender, EventArgs e)
         {
             try
             {
@@ -125,55 +121,83 @@ namespace DataVisualTest
                 lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
             }
 
-            TimeSpan ts = DateTime.Now - (DateTime)timer.Tag;
-            if (ts.TotalSeconds > Duration_sec)
+
+            TimeSpan ts = DateTime.Now - (DateTime)_timer.Tag;
+            if (ts.TotalSeconds > _load_on_duration_sec)
             {
-                stop();
-                btnStart.Content = "Start";
+                _timer.Stop();
+
+                if (_rest_duration_sec > 0)
+                {
+                    _timer.Tick -= loadOn_timer_tick;
+                    _timer.Tick += rest_timer_Tick;
+
+                    connectLoad(false);
+
+                    _timer.Start();
+                }
+                else
+                {
+                    runDone();
+                }
+            }
+
+
+        }
+
+        void rest_timer_Tick(object sender, EventArgs e)
+        {
+            DateTime dateTime = DateTime.Now;
+            DateTime startTime = (DateTime)_timer.Tag;
+            TimeSpan ts = DateTime.Now - startTime;
+
+            getVoltage();
+
+            if (ts.TotalSeconds > (_load_on_duration_sec + _rest_duration_sec))
+            {
+                _timer.Stop();
+                runDone();
             }
         }
 
-        void stop()
+        void runDone()
         {
-            timer.Stop();
-
-            try
-            {
-                cina.SetACBusPin(0, false);
-            }
-            catch (Exception ex)
-            {
-                lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
-            }
-
             _sw.Close();
+            btnStart.Content = "Start";
+        }
+
+
+        void getVoltage()
+        {
+            DateTime dateTime = DateTime.Now;
+            TimeSpan ts = dateTime - (DateTime)_timer.Tag;
+
+            bool ovf = false;
+            float v = _cina.GetVoltage(ref ovf);
+            voltage_colection.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, v));
+
+            writeLineDataToFile(_sw, $"{dateTime},,{v},,{ts.Ticks}");
 
         }
 
         void getData()
         {
             DateTime dateTime = DateTime.Now;
-            DateTime startTime = (DateTime)timer.Tag;
-            TimeSpan ts = DateTime.Now - startTime;
+            TimeSpan ts = dateTime - (DateTime)_timer.Tag;
 
             bool ovf = false;
-            float v = cina.GetVoltage(ref ovf);
-            float i = cina.GetCurrent();
+            float v = _cina.GetVoltage(ref ovf);
+            float i = _cina.GetCurrent();
             float p = v * i;
 
-            voltage.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, v));
-            if (voltage.Count > 1)
-            {
-                //                if (i > 0)
-                current.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, i));
-                //                if (p > 0)
-                power.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, p));
-            }
+            voltage_colection.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, v));
+            current_colection.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, i));
+            power_collaction.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, p));
 
             double rate_fromStart = 0;
-            if (power.Count > 0)
+            if (power_collaction.Count > 0)
             {
-                double deltaPower_fromStart = p - power[0].Value;
+                double deltaPower_fromStart = p - power_collaction[0].Value;
                 rate_fromStart = deltaPower_fromStart / ts.TotalHours; // mw/h
             }
 
@@ -273,24 +297,22 @@ namespace DataVisualTest
             foreach (DataRow r in tdata.Rows)
             {
                 TimeSpan ts = new TimeSpan((long)r["Duration"]);
+                double duration_ms = ts.TotalMilliseconds;
 
-                volts_list.Add(
-                     new KeyValuePair<double, double>(
-                         ts.TotalMilliseconds, (double)r["Voltage(V)"]));
+                double value = 0;
+                string cell = r["Voltage(V)"].ToString();
 
-                current_list.Add(
-                     new KeyValuePair<double, double>(
-                         ts.TotalMilliseconds, (double)r["Current(mA)"]));
+                if( Double.TryParse(cell, out value) )
+                    volts_list.Add(new KeyValuePair<double, double>(duration_ms, value));
 
-                power_list.Add(
-                     new KeyValuePair<double, double>(
-                         ts.TotalMilliseconds, (double)r["Power(mW)"]));
+                cell = r["Current(mA)"].ToString();
+                if (Double.TryParse(cell, out value))
+                    current_list.Add(new KeyValuePair<double, double>(duration_ms, value));
+
+                cell = r["Power(mW)"].ToString();
+                if (Double.TryParse(cell, out value))
+                    power_list.Add(new KeyValuePair<double, double>(duration_ms, value));
             }
-
-            if (current_list.Count > 0)
-                current_list.RemoveAt(0);
-            if (power_list.Count > 0)
-                power_list.RemoveAt(0);
 
             Dictionary<string, List<KeyValuePair<double, double>>> map = new Dictionary<string, List<KeyValuePair<double, double>>>();
             map.Add("Voltage", volts_list);
@@ -320,7 +342,7 @@ namespace DataVisualTest
             DataTable table = new DataTable(filename);
             foreach (var cname in col_names)
             {
-                DataColumn c = new DataColumn(cname, typeof(double));
+                DataColumn c = new DataColumn(cname);
                 if (cname == "TimeStamp")
                     c = new DataColumn(cname, typeof(DateTime));
                 else if (cname == "Duration")
@@ -378,7 +400,7 @@ namespace DataVisualTest
         {
             string invalidChars = new String(System.IO.Path.GetInvalidFileNameChars());
 
-            Regex regx = new Regex( $"[{ Regex.Escape( invalidChars ) }]");
+            Regex regx = new Regex($"[{ Regex.Escape(invalidChars) }]");
             bool isInvalid = regx.IsMatch(e.Text);
 
             if (isInvalid)
@@ -395,20 +417,35 @@ namespace DataVisualTest
                 fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
         }
 
+        void connectLoad(bool on_off = true)
+        {
+            try
+            {
+                _cina.SetACBusPin(0, on_off);
+            }
+            catch (Exception ex)
+            {
+                lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
+            }
+
+        }
+
         private void Button_StartClick(object sender, RoutedEventArgs e)
         {
             if (btnStart.Content.ToString() == "Start")
             {
                 btnStart.Content = "Stop";
-                Duration_sec = Convert.ToInt32(txtDuration.Text);
 
-                voltage = new ObservableCollection<KeyValuePair<double, double>>();
-                current = new ObservableCollection<KeyValuePair<double, double>>();
-                power = new ObservableCollection<KeyValuePair<double, double>>();
+                _load_on_duration_sec = Convert.ToDouble(txtDuration.Text);
+                _rest_duration_sec = Convert.ToDouble(txtRest.Text);
 
-                lineVolts.DataContext = voltage;
-                lineCurrent.DataContext = current;
-                linePower.DataContext = power;
+                voltage_colection = new ObservableCollection<KeyValuePair<double, double>>();
+                current_colection = new ObservableCollection<KeyValuePair<double, double>>();
+                power_collaction = new ObservableCollection<KeyValuePair<double, double>>();
+
+                lineVolts.DataContext = voltage_colection;
+                lineCurrent.DataContext = current_colection;
+                linePower.DataContext = power_collaction;
 
                 //string filename = $"BatteryProfile{DateTime.Now.ToString("MMdd_HHmm")}.csv";
                 string filename = $"{getValidFileName(txtFileName.Text)}.csv";
@@ -417,38 +454,21 @@ namespace DataVisualTest
                 _sw.AutoFlush = true;
                 _sw.WriteLine($"TimeStamp,Power(mW),Voltage(V),Current(mA),Duration");
 
-                timer.Interval = new TimeSpan(0, 0, 0, 0, Int32.Parse(txtInterval.Text));
+                _timer.Tick -= rest_timer_Tick;
+                _timer.Tick += loadOn_timer_tick;
+                _timer.Interval = new TimeSpan(0, 0, 0, 0, Int32.Parse(txtInterval.Text));
 
-                cina.SetACBusPin(0, true);
-                timer.Tag = DateTime.Now;
-                timer.Start();
-
-                getData();
-
-
+                _timer.Tag = DateTime.Now;
+                getVoltage();
+                connectLoad(true);
+                _timer.Start();
             }
             else
             {
-                stop();
+                _timer.Stop();
+                _sw.Close();
                 btnStart.Content = "Start";
             }
-        }
-    }
-
-    public class FileNameRule : ValidationRule
-    {
-        public override ValidationResult Validate(object value, CultureInfo cultureInfo)
-        {
-            string fileName = (string)value;
-
-            string strTheseAreInvalidFileNameChars = new string(System.IO.Path.GetInvalidFileNameChars());
-            Regex regInvalidFileName = new Regex("[" + Regex.Escape(strTheseAreInvalidFileNameChars) + "]");
-
-            bool isValidName = !regInvalidFileName.IsMatch(fileName);
-            if (isValidName)
-                return ValidationResult.ValidResult;
-            else
-                return new ValidationResult(false, "Invalid character");
         }
     }
 }
