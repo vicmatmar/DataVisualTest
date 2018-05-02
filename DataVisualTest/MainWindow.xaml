@@ -45,7 +45,7 @@
                     <StackPanel >
                         <Label Content="Name:"/>
                         <TextBox Grid.Column="1" x:Name="txtFileName" 
-                                 Text="BP1" Width="50" TextAlignment="Left">
+                                 Text="BP1" Width="50" TextAlignment="Left" PreviewTextInput="txtFileNameImput">
                         </TextBox>
 
                     </StackPanel>

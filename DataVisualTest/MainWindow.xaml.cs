@@ -34,7 +34,7 @@ namespace DataVisualTest
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window , INotifyPropertyChanged
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
         ObservableCollection<KeyValuePair<double, double>> voltage, current, power;
 
@@ -104,23 +104,30 @@ namespace DataVisualTest
 
         public bool HasImportedData
         {
-            get {
+            get
+            {
                 return (linePower.Series.Count > 1 || lineVolts.Series.Count > 1) || lineCurrent.Series.Count > 1;
             }
-            set {
+            set
+            {
                 OnPropertyChanged("HasImportedData");
             }
         }
 
-        async void Timer_Tick(object sender, EventArgs e)
+        void Timer_Tick(object sender, EventArgs e)
         {
-            await getDataAsync();
+            try
+            {
+                getData();
+            }
+            catch (Exception ex)
+            {
+                lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
+            }
 
             TimeSpan ts = DateTime.Now - (DateTime)timer.Tag;
             if (ts.TotalSeconds > Duration_sec)
             {
-                //string msg = t.Result;  // This forces the task to wait...
-
                 stop();
                 btnStart.Content = "Start";
             }
@@ -130,29 +137,37 @@ namespace DataVisualTest
         {
             timer.Stop();
 
-            cina.SetACBusPin(0, false);
+            try
+            {
+                cina.SetACBusPin(0, false);
+            }
+            catch (Exception ex)
+            {
+                lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
+            }
 
             _sw.Close();
+
         }
 
-        async Task getDataAsync()
+        void getData()
         {
             DateTime dateTime = DateTime.Now;
             DateTime startTime = (DateTime)timer.Tag;
             TimeSpan ts = DateTime.Now - startTime;
 
-            //bool ovf = false;
-            float v = await cina.GetVoltageAsync();
-            float i = await cina.GetCurrentAsync();
+            bool ovf = false;
+            float v = cina.GetVoltage(ref ovf);
+            float i = cina.GetCurrent();
             float p = v * i;
 
             voltage.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, v));
             if (voltage.Count > 1)
             {
-//                if (i > 0)
-                    current.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, i));
-//                if (p > 0)
-                    power.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, p));
+                //                if (i > 0)
+                current.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, i));
+                //                if (p > 0)
+                power.Add(new KeyValuePair<double, double>(ts.TotalMilliseconds, p));
             }
 
             double rate_fromStart = 0;
@@ -170,18 +185,18 @@ namespace DataVisualTest
             guimsg += $" {ts.TotalSeconds.ToString("F2")}s";
             lblMsg.Content = guimsg;
 
-            await writeLineDataToFileAsync(_sw, $"{dateTime},{p},{v},{i},{ts.Ticks}");
+            writeLineDataToFile(_sw, $"{dateTime},{p},{v},{i},{ts.Ticks}");
 
         }
 
-        async Task writeLineDataToFileAsync(StreamWriter sw, string data)
+        void writeLineDataToFile(StreamWriter sw, string data)
         {
             int trycount = 0;
             while (true)
             {
                 try
                 {
-                    await sw.WriteLineAsync(data);
+                    sw.WriteLine(data);
                     break;
                 }
                 catch (Exception ex)
@@ -212,6 +227,12 @@ namespace DataVisualTest
 
             string title = System.IO.Path.GetFileNameWithoutExtension(filename);
 
+            addLineSeriesToCharts(title, map);
+
+        }
+
+        void addLineSeriesToCharts(string title, Dictionary<string, List<KeyValuePair<double, double>>> map)
+        {
             LineSeries series = new LineSeries();
             series.Title = title;
             series.ItemsSource = map["Voltage"];
@@ -307,13 +328,6 @@ namespace DataVisualTest
                 table.Columns.Add(c);
             }
 
-            /*
-            int iDate = Array.FindIndex<string>(col_names, n => n == "TimeStamp");
-            int iPower = Array.FindIndex<string>(col_names, n => n.StartsWith("Power"));
-            int iVolatge = Array.FindIndex<string>(col_names, n => n.StartsWith("Voltage"));
-            int iCurrent = Array.FindIndex<string>(col_names, n => n.StartsWith("Current"));
-            */
-
             // get the rows
             for (int i = 1; i < lines.Length; i++)
             {
@@ -360,9 +374,25 @@ namespace DataVisualTest
 
         }
 
+        private void txtFileNameImput(object sender, TextCompositionEventArgs e)
+        {
+            string invalidChars = new String(System.IO.Path.GetInvalidFileNameChars());
+
+            Regex regx = new Regex( $"[{ Regex.Escape( invalidChars ) }]");
+            bool isInvalid = regx.IsMatch(e.Text);
+
+            if (isInvalid)
+            {
+                e.Handled = true;
+                return;
+            }
+            e.Handled = false;
+        }
+
         string getValidFileName(string fileName)
         {
-            return System.IO.Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
+            return System.IO.Path.GetInvalidFileNameChars().Aggregate(
+                fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
         }
 
         private void Button_StartClick(object sender, RoutedEventArgs e)
@@ -393,7 +423,7 @@ namespace DataVisualTest
                 timer.Tag = DateTime.Now;
                 timer.Start();
 
-                Task t = getDataAsync();
+                getData();
 
 
             }
