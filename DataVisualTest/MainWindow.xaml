@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DataVisualTest"
-        xmlns:chartingToolkit="clr-namespace:System.Windows.Controls.DataVisualization.Charting;assembly=System.Windows.Controls.DataVisualization.Toolkit"
+        xmlns:chart="clr-namespace:System.Windows.Controls.DataVisualization.Charting;assembly=System.Windows.Controls.DataVisualization.Toolkit"
         xmlns:Properties="clr-namespace:DataVisualTest.Properties" x:Class="DataVisualTest.MainWindow"
         mc:Ignorable="d"
         Title="Power Monitor" 
@@ -61,6 +61,10 @@
                         <Label Content="Rest(s):"/>
                         <TextBox x:Name="txtRest" Text="2.0" Width="30" TextAlignment="Right"/>
                     </StackPanel>
+                    <StackPanel>
+                        <Label Content="Repeat:"/>
+                        <TextBox x:Name="txtRepeat" Text="0" Width="30" TextAlignment="Right"/>
+                    </StackPanel>
                 </ToolBar>
                 <Label x:Name="lblMsg" Height="30" Content="{Binding}" Background="LightBlue" BorderThickness="1" BorderBrush="Black"/>
             </StackPanel>
@@ -70,29 +74,34 @@
                 Grid.ColumnSpan="2"
                 >
 
-                <chartingToolkit:Chart 
+                <chart:Chart 
                         x:Name="linePower" Title="Power" 
                         MinHeight="350"
                         Background="LightBlue" Foreground="DarkBlue" 
-                        IsEnabled="True">
+                        IsEnabled="True"
+                    >
 
-                    <chartingToolkit:LineSeries Title="{Binding ElementName=txtFileName, Path=Text}" 
+                    <chart:LineSeries Title="{Binding ElementName=txtFileName, Path=Text}"
                                 ItemsSource="{Binding}" 
                                 DependentValuePath="Value"
                                 IndependentValuePath="Key"
                                 IsSelectionEnabled="True">
-                        <chartingToolkit:LineSeries.IndependentAxis>
-                            <chartingToolkit:LinearAxis Orientation="X" Title="Duration (ms)" Minimum="0"/>
-                        </chartingToolkit:LineSeries.IndependentAxis>
-                        <chartingToolkit:LineSeries.DependentRangeAxis>
-                            <chartingToolkit:LinearAxis x:Name="PowerY" Orientation="Y" Title="Power (mW)"/>
-                        </chartingToolkit:LineSeries.DependentRangeAxis>
-                    </chartingToolkit:LineSeries>
-                </chartingToolkit:Chart>
+
+                        <chart:LineSeries.IndependentAxis>
+                            <chart:LinearAxis Orientation="X" Title="Duration (ms)" Minimum="0" ShowGridLines="True"/>
+                        </chart:LineSeries.IndependentAxis>
+
+                        <chart:LineSeries.DependentRangeAxis>
+                            <chart:LinearAxis x:Name="PowerY" Orientation="Y" Title="Power (mW)" ShowGridLines="True"/>
+                        </chart:LineSeries.DependentRangeAxis>
+
+                    </chart:LineSeries>
+                    
+                </chart:Chart>
             </DockPanel>
 
 
-            <chartingToolkit:Chart 
+            <chart:Chart 
                         x:Name="lineVolts" Title="Volts" 
                         Grid.Column="0" Grid.Row="2" 
                         Background="LightBlue" Foreground="DarkBlue" 
@@ -101,12 +110,11 @@
 
 
 
-                <chartingToolkit:Chart.ContextMenu>
+                <chart:Chart.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="Clear" Click="Clear_Voltage"/>
                     </ContextMenu>
-                </chartingToolkit:Chart.ContextMenu>
-
+                </chart:Chart.ContextMenu>
 
                 <!--<chartingToolkit:Chart.LegendStyle>
                     <Style TargetType="Control">
@@ -115,7 +123,7 @@
                     </Style>
                 </chartingToolkit:Chart.LegendStyle>-->
 
-                <chartingToolkit:LineSeries Title="{Binding ElementName=txtFileName, Path=Text}"  
+                <chart:LineSeries Title="{Binding ElementName=txtFileName, Path=Text}"  
                                     ItemsSource="{Binding}" 
                                     DependentValuePath="Value"
                                     IndependentValuePath="Key"
@@ -127,37 +135,39 @@
                         </Style>
                     </chartingToolkit:LineSeries.DataPointStyle>-->
 
-                    <chartingToolkit:LineSeries.IndependentAxis>
-                        <chartingToolkit:LinearAxis Orientation="X" Title="Duration (ms)" />
-                    </chartingToolkit:LineSeries.IndependentAxis>
+                    <chart:LineSeries.IndependentAxis>
+                        <chart:LinearAxis Orientation="X" Title="Duration (ms)" ShowGridLines="True"/>
+                    </chart:LineSeries.IndependentAxis>
 
-                    <chartingToolkit:LineSeries.DependentRangeAxis>
-                        <chartingToolkit:LinearAxis Orientation="Y" Title="Volatge (V)"/>
-                    </chartingToolkit:LineSeries.DependentRangeAxis>
+                    <chart:LineSeries.DependentRangeAxis>
+                        <chart:LinearAxis Orientation="Y" Title="Volatge (V)" ShowGridLines="True"/>
+                    </chart:LineSeries.DependentRangeAxis>
 
-                </chartingToolkit:LineSeries>
-            </chartingToolkit:Chart>
+                </chart:LineSeries>
+            </chart:Chart>
 
-            <chartingToolkit:Chart 
+            <chart:Chart 
                     x:Name="lineCurrent" Title="Current"
                         Grid.Column="1" Grid.Row="2" 
                         MinHeight="300" 
                         Background="LightBlue" Foreground="DarkBlue" 
                         IsEnabled="True">
 
-                <chartingToolkit:LineSeries Title="{Binding ElementName=txtFileName, Path=Text}"  
+                <chart:LineSeries Title="{Binding ElementName=txtFileName, Path=Text}"  
                                     ItemsSource="{Binding}" 
                                     DependentValuePath="Value"
                                     IndependentValuePath="Key"
                                     IsSelectionEnabled="True">
-                    <chartingToolkit:LineSeries.IndependentAxis>
-                        <chartingToolkit:LinearAxis Orientation="X" Title="Duration (ms)" Minimum="0"/>
-                    </chartingToolkit:LineSeries.IndependentAxis>
-                    <chartingToolkit:LineSeries.DependentRangeAxis>
-                        <chartingToolkit:LinearAxis Orientation="Y" Title="Current (mA)"/>
-                    </chartingToolkit:LineSeries.DependentRangeAxis>
-                </chartingToolkit:LineSeries>
-            </chartingToolkit:Chart>
+
+                    <chart:LineSeries.IndependentAxis>
+                        <chart:LinearAxis Orientation="X" Title="Duration (ms)" Minimum="0" ShowGridLines="True"/>
+                    </chart:LineSeries.IndependentAxis>
+
+                    <chart:LineSeries.DependentRangeAxis>
+                        <chart:LinearAxis Orientation="Y" Title="Current (mA)" ShowGridLines="True"/>
+                    </chart:LineSeries.DependentRangeAxis>
+                </chart:LineSeries>
+            </chart:Chart>
 
             <StatusBarItem Grid.Row="3" Grid.ColumnSpan="2">
                 <TextBlock x:Name="lblStatus"/>

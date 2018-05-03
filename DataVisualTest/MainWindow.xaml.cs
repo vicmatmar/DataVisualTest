@@ -47,6 +47,8 @@ namespace DataVisualTest
 
         double _load_on_duration_sec = 15;
         double _rest_duration_sec = 2;
+        int _repeat_count = 0;
+        int _interval = 100;
 
 
         public MainWindow()
@@ -162,8 +164,26 @@ namespace DataVisualTest
 
         void runDone()
         {
-            _sw.Close();
-            btnStart.Content = "Start";
+            if (_repeat_count-- > 0)
+            {
+
+                _timer.Tick -= rest_timer_Tick;
+                _timer.Tick -= loadOn_timer_tick;
+                _timer.Tick += loadOn_timer_tick;
+
+                //_load_on_duration_sec += _load_on_duration_sec + _rest_duration_sec;
+                TimeSpan etime = DateTime.Now - (DateTime)_timer.Tag;
+                _load_on_duration_sec = etime.TotalSeconds + Convert.ToDouble(txtDuration.Text);
+                connectLoad(true);
+
+                _timer.Start();
+
+            }
+            else
+            {
+                _sw.Close();
+                btnStart.Content = "Start";
+            }
         }
 
 
@@ -280,6 +300,7 @@ namespace DataVisualTest
             series.ItemsSource = map["Power"];
             series.DependentValuePath = "Value";
             series.IndependentValuePath = "Key";
+            //series.Style.BasedOn = ((LineSeries)linePower.Series[0]).Style;
             series.IndependentAxis = ((LineSeries)linePower.Series[0]).IndependentAxis;
             series.DependentRangeAxis = ((LineSeries)linePower.Series[0]).DependentRangeAxis;
             linePower.Series.Add(series);
@@ -436,8 +457,10 @@ namespace DataVisualTest
             {
                 btnStart.Content = "Stop";
 
+                _interval = Convert.ToInt32(txtInterval.Text);
                 _load_on_duration_sec = Convert.ToDouble(txtDuration.Text);
                 _rest_duration_sec = Convert.ToDouble(txtRest.Text);
+                _repeat_count = Convert.ToInt32(txtRepeat.Text);
 
                 voltage_colection = new ObservableCollection<KeyValuePair<double, double>>();
                 current_colection = new ObservableCollection<KeyValuePair<double, double>>();
@@ -447,20 +470,26 @@ namespace DataVisualTest
                 lineCurrent.DataContext = current_colection;
                 linePower.DataContext = power_collaction;
 
+
+                ((LineSeries)linePower.Series[0]).Title = "Test";
+                ((LineSeries)linePower.Series[0]).ToolTip = "Name #SERIESNAME : X - #VALX{F2} , Y - #VALY{F2}";
+                //var s = ((LineSeries)linePower.Series[0]).DataPointStyle.Resources;
+
                 //string filename = $"BatteryProfile{DateTime.Now.ToString("MMdd_HHmm")}.csv";
                 string filename = $"{getValidFileName(txtFileName.Text)}.csv";
 
                 _sw = File.CreateText(filename);
-                _sw.AutoFlush = true;
+                //_sw.AutoFlush = true;
                 _sw.WriteLine($"TimeStamp,Power(mW),Voltage(V),Current(mA),Duration");
 
                 _timer.Tick -= rest_timer_Tick;
                 _timer.Tick += loadOn_timer_tick;
-                _timer.Interval = new TimeSpan(0, 0, 0, 0, Int32.Parse(txtInterval.Text));
+                _timer.Interval = new TimeSpan(0, 0, 0, 0, _interval);
 
                 _timer.Tag = DateTime.Now;
                 getVoltage();
                 connectLoad(true);
+                Thread.Sleep(_interval);
                 _timer.Start();
             }
             else
@@ -470,5 +499,6 @@ namespace DataVisualTest
                 btnStart.Content = "Start";
             }
         }
+
     }
 }
