@@ -300,7 +300,7 @@ namespace DataVisualTest
             series.ItemsSource = map["Power"];
             series.DependentValuePath = "Value";
             series.IndependentValuePath = "Key";
-            //series.Style.BasedOn = ((LineSeries)linePower.Series[0]).Style;
+            series.DataPointStyle = (Style)Resources["DataPointStyle2"];
             series.IndependentAxis = ((LineSeries)linePower.Series[0]).IndependentAxis;
             series.DependentRangeAxis = ((LineSeries)linePower.Series[0]).DependentRangeAxis;
             linePower.Series.Add(series);
@@ -471,8 +471,8 @@ namespace DataVisualTest
                 linePower.DataContext = power_collaction;
 
 
-                ((LineSeries)linePower.Series[0]).Title = "Test";
-                ((LineSeries)linePower.Series[0]).ToolTip = "Name #SERIESNAME : X - #VALX{F2} , Y - #VALY{F2}";
+                //((LineSeries)linePower.Series[0]).Title = "Test";
+                //((LineSeries)linePower.Series[0]).ToolTip = "Name #SERIESNAME : X - #VALX{F2} , Y - #VALY{F2}";
                 //var s = ((LineSeries)linePower.Series[0]).DataPointStyle.Resources;
 
                 //string filename = $"BatteryProfile{DateTime.Now.ToString("MMdd_HHmm")}.csv";

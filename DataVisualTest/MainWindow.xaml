@@ -12,8 +12,28 @@
         Height="800" 
         >
 
+    <Window.Resources>
+        <Style x:Key="DataPointStyle2" TargetType="{x:Type chart:DataPoint}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="chart:LineDataPoint">
+                        <Grid x:Name="Root" Opacity="1">
+                            <ToolTipService.ToolTip>
+                                <StackPanel Margin="20,20,20,20">
+                                    <ContentControl Content="{TemplateBinding IndependentValue}" ContentStringFormat="X: {0:F2}"/>
+                                    <ContentControl Content="{TemplateBinding DependentValue}" ContentStringFormat="Y: {0:F2}"/>
+                                </StackPanel>
+                            </ToolTipService.ToolTip>
+                            <Ellipse StrokeThickness="{TemplateBinding BorderThickness}" Stroke="{TemplateBinding BorderBrush}" Fill="{TemplateBinding Background}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
     <DockPanel>
-        
+
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="_Import" Click="Import_MenuItem_Click"/>
@@ -85,7 +105,9 @@
                                 ItemsSource="{Binding}" 
                                 DependentValuePath="Value"
                                 IndependentValuePath="Key"
-                                IsSelectionEnabled="True">
+                                IsSelectionEnabled="True"
+                                DataPointStyle="{StaticResource DataPointStyle2}"
+                                      >
 
                         <chart:LineSeries.IndependentAxis>
                             <chart:LinearAxis Orientation="X" Title="Duration (ms)" Minimum="0" ShowGridLines="True"/>
@@ -96,7 +118,7 @@
                         </chart:LineSeries.DependentRangeAxis>
 
                     </chart:LineSeries>
-                    
+
                 </chart:Chart>
             </DockPanel>
 
@@ -116,24 +138,24 @@
                     </ContextMenu>
                 </chart:Chart.ContextMenu>
 
-                <!--<chartingToolkit:Chart.LegendStyle>
+                <!--<chart:Chart.LegendStyle>
                     <Style TargetType="Control">
                         <Setter Property="Width" Value="0" />
                         <Setter Property="Height" Value="0" />
                     </Style>
-                </chartingToolkit:Chart.LegendStyle>-->
+                </chart:Chart.LegendStyle>-->
 
-                <chart:LineSeries Title="{Binding ElementName=txtFileName, Path=Text}"  
+                <chart:LineSeries Title="{Binding ElementName=txtFileName, Path=Text}"  x:Name="PowerLineSeries"
                                     ItemsSource="{Binding}" 
                                     DependentValuePath="Value"
                                     IndependentValuePath="Key"
                                     IsSelectionEnabled="True">
 
-                    <!--<chartingToolkit:LineSeries.DataPointStyle>
-                        <Style TargetType="chartingToolkit:LineDataPoint">
+                    <!--<chart:LineSeries.DataPointStyle>
+                        <Style TargetType="chart:LineDataPoint">
                             <Setter Property="Background" Value="Red"></Setter>
                         </Style>
-                    </chartingToolkit:LineSeries.DataPointStyle>-->
+                    </chart:LineSeries.DataPointStyle>-->
 
                     <chart:LineSeries.IndependentAxis>
                         <chart:LinearAxis Orientation="X" Title="Duration (ms)" ShowGridLines="True"/>
