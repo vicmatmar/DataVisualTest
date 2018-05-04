@@ -300,7 +300,6 @@ namespace DataVisualTest
             series.ItemsSource = map["Power"];
             series.DependentValuePath = "Value";
             series.IndependentValuePath = "Key";
-            series.DataPointStyle = (Style)Resources["DataPointStyle2"];
             series.IndependentAxis = ((LineSeries)linePower.Series[0]).IndependentAxis;
             series.DependentRangeAxis = ((LineSeries)linePower.Series[0]).DependentRangeAxis;
             linePower.Series.Add(series);
@@ -375,7 +374,17 @@ namespace DataVisualTest
             for (int i = 1; i < lines.Length; i++)
             {
                 var fields = lines[i].Split(new[] { ',' });
-                table.Rows.Add(fields);
+
+                try
+                {
+                    table.Rows.Add(fields);
+                }
+                catch (Exception ex)
+                {
+                    lblStatus.Text = $"{DateTime.Now.ToShortTimeString()} {ex.Message}";
+                }
+
+
             }
 
             return table;

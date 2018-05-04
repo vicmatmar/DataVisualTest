@@ -17,14 +17,14 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="chart:LineDataPoint">
-                        <Grid x:Name="Root" Opacity="1">
+                        <Grid x:Name="Root" Opacity="10">
                             <ToolTipService.ToolTip>
-                                <StackPanel Margin="20,20,20,20">
+                                <StackPanel Margin="2,2,2,2">
                                     <ContentControl Content="{TemplateBinding IndependentValue}" ContentStringFormat="X: {0:F2}"/>
                                     <ContentControl Content="{TemplateBinding DependentValue}" ContentStringFormat="Y: {0:F2}"/>
                                 </StackPanel>
                             </ToolTipService.ToolTip>
-                            <Ellipse StrokeThickness="{TemplateBinding BorderThickness}" Stroke="{TemplateBinding BorderBrush}" Fill="{TemplateBinding Background}"/>
+                            <Ellipse StrokeThickness="{TemplateBinding BorderThickness}" Stroke="{TemplateBinding BorderBrush}"/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
@@ -106,9 +106,7 @@
                                 DependentValuePath="Value"
                                 IndependentValuePath="Key"
                                 IsSelectionEnabled="True"
-                                DataPointStyle="{StaticResource DataPointStyle2}"
                                       >
-
                         <chart:LineSeries.IndependentAxis>
                             <chart:LinearAxis Orientation="X" Title="Duration (ms)" Minimum="0" ShowGridLines="True"/>
                         </chart:LineSeries.IndependentAxis>
@@ -149,7 +147,8 @@
                                     ItemsSource="{Binding}" 
                                     DependentValuePath="Value"
                                     IndependentValuePath="Key"
-                                    IsSelectionEnabled="True">
+                                    IsSelectionEnabled="True"
+                                      >
 
                     <!--<chart:LineSeries.DataPointStyle>
                         <Style TargetType="chart:LineDataPoint">
@@ -179,7 +178,8 @@
                                     ItemsSource="{Binding}" 
                                     DependentValuePath="Value"
                                     IndependentValuePath="Key"
-                                    IsSelectionEnabled="True">
+                                    IsSelectionEnabled="True"
+                                      >
 
                     <chart:LineSeries.IndependentAxis>
                         <chart:LinearAxis Orientation="X" Title="Duration (ms)" Minimum="0" ShowGridLines="True"/>
