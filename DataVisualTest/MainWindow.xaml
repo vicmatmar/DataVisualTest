@@ -36,7 +36,10 @@
 
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="_Import" Click="Import_MenuItem_Click"/>
+                <MenuItem Header="_Open Parameter" Click="OpenParam_MenuItem_Click"/>
+                <MenuItem Header="_Save Parameter" Click="SaveParam_MenuItem_Click"/>
+                <Separator />
+                <MenuItem Header="_Import Chart Data" Click="Import_MenuItem_Click"/>
                 <Separator />
                 <MenuItem Header="_Exit" Click="Close_Window_MenuItem_Click" />
             </MenuItem>
@@ -61,11 +64,11 @@
             <StackPanel Grid.ColumnSpan="2">
 
                 <ToolBar BorderBrush="Black" BorderThickness="1">
-                    <Button x:Name="btnStart" Content="Start" Width="40" Click="Button_StartClick" Background="LightBlue" BorderBrush="Black"/>
+                    <Button x:Name="btnStart" Content="Start" Width="50" Margin="10" Click="Button_StartClick" Background="LightBlue" BorderBrush="Black"/>
                     <StackPanel >
                         <Label Content="Name:"/>
                         <TextBox Grid.Column="1" x:Name="txtFileName" 
-                                 Text="BP1" Width="50" TextAlignment="Left" PreviewTextInput="txtFileNameImput">
+                                 Text="BP1" Width="150" TextAlignment="Left" PreviewTextInput="txtFileNameImput">
                         </TextBox>
 
                     </StackPanel>

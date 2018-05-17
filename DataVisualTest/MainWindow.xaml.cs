@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace DataVisualTest
 {
@@ -322,7 +323,7 @@ namespace DataVisualTest
                 double value = 0;
                 string cell = r["Voltage(V)"].ToString();
 
-                if( Double.TryParse(cell, out value) )
+                if (Double.TryParse(cell, out value))
                     volts_list.Add(new KeyValuePair<double, double>(duration_ms, value));
 
                 cell = r["Current(mA)"].ToString();
@@ -445,6 +446,48 @@ namespace DataVisualTest
         {
             return System.IO.Path.GetInvalidFileNameChars().Aggregate(
                 fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
+        }
+
+        private void SaveParam_MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.Filter = "XML file|*.xml";
+            if (dlg.ShowDialog() == true)
+            {
+                XDocument xdoc = new XDocument(new XElement("PowerMonitorSettings"));
+
+                XElement element = new XElement("BatteryProfilerRunSettings",
+                    new XAttribute("Interval_ms", txtInterval.Text),
+                    new XAttribute("Duration_s", txtDuration.Text),
+                    new XAttribute("Rest_s", txtRest.Text),
+                    new XAttribute("Repeat_count", txtRepeat.Text)
+                    );
+
+
+                xdoc.Root.Add(element);
+
+                xdoc.Save(dlg.FileName);
+            }
+        }
+
+        private void OpenParam_MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog dlg = new OpenFileDialog();
+            dlg.Filter = "XML file|*.xml";
+            if (dlg.ShowDialog() == true)
+            {
+                XDocument xdoc = XDocument.Load(dlg.FileName);
+
+                var settings = xdoc.Root.Elements("BatteryProfilerRunSettings").ToArray();
+                if (settings.Length > 0)
+                {
+                    var s = settings[0];
+                    txtInterval.Text = s.Attribute("Interval_ms").Value;
+                    txtDuration.Text = s.Attribute("Duration_s").Value;
+                    txtRest.Text = s.Attribute("Rest_s").Value;
+                    txtRepeat.Text = s.Attribute("Repeat_count").Value;
+                }
+            }
         }
 
         void connectLoad(bool on_off = true)
