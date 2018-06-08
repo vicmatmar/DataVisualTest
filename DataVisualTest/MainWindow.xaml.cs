@@ -534,12 +534,24 @@ namespace DataVisualTest
                 //_sw.AutoFlush = true;
                 _sw.WriteLine($"TimeStamp,Power(mW),Voltage(V),Current(mA),Duration");
 
-                _timer.Tick -= rest_timer_Tick;
+                _timer = new DispatcherTimer();
+                //_timer.Tick -= rest_timer_Tick;
                 _timer.Tick += loadOn_timer_tick;
                 _timer.Interval = new TimeSpan(0, 0, 0, 0, _interval);
 
                 _timer.Tag = DateTime.Now;
-                getVoltage();
+
+                for (int i = 0; i < 5; i++)
+                {
+                    try
+                    {
+                        getVoltage();
+                        break;
+                    }
+                    catch
+                    {
+                    }
+                }
                 connectLoad(true);
                 Thread.Sleep(_interval);
                 _timer.Start();
